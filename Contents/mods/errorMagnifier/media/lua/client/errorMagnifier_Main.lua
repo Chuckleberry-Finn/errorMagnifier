@@ -77,11 +77,10 @@ function errorMagnifier.errorPanelPopulate()
 		local errorText = errorMagnifier.parsedErrorsKeyed[errorMagnifier.currentlyViewing-1+i]
 		local countOf = "x"..errorMagnifier.parsedErrors[errorText]
 
-		print("ERROR: errorText: "..errorText)
-
 		local countOfWidth = getTextManager():MeasureStringX(UIFont.NewSmall, countOf)
 		local countOfHeight = getTextManager():MeasureStringY(UIFont.NewSmall, countOf)
 
+		popup:drawRect(4, 4, popup:getWidth()-8, popup:getHeight()-8, 0.2, 0.2, 0.2, 0.2)
 		popup:drawText(errorText, 3, 3, 0.9, 0.9, 0.9, 0.9, UIFont.NewSmall)
 		popup:drawText(countOf, popup:getWidth()-countOfWidth-4, 0-countOfHeight-4, 0.9, 0.9, 0.9, 0.9, UIFont.NewSmall)
 
