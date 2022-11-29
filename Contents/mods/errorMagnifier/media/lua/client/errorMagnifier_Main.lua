@@ -38,52 +38,43 @@ end
 if getDebug() then local function test() DebugLogStream.printException() end Events.EveryTenMinutes.Add(test) end
 
 
---[[
-self.addStockBtn = ISButton:new(manageStockButtonsX-22, manageStockButtonsY+5, btnHgt-3, btnHgt-3, "+", self, storeWindow.onClick)
-self.addStockBtn.internal = "ADDSTOCK"
-self.addStockBtn:initialise()
-self.addStockBtn:instantiate()
-self:addChild(self.addStockBtn)
---]]
-
---[[
-local font = getCore():getOptionTooltipFont()
-local fontType = fontDict[font] or UIFont.Medium
-local textWidth = math.max(getTextManager():MeasureStringX(fontType, tooltipStart),getTextManager():MeasureStringX(fontType, skillsRecord))
-local textHeight = getTextManager():MeasureStringY(fontType, tooltipStart)
-self:drawRect(0, tooltipY, journalTooltipWidth, textHeight + 8, math.min(1,bgColor.a+0.4), bgColor.r, bgColor.g, bgColor.b)
-self:drawRectBorder(0, tooltipY, journalTooltipWidth, textHeight + 8, bdrColor.a, bdrColor.r, bdrColor.g, bdrColor.b)
-self:drawText(skillsRecord, x+1, (y+(15-lineHeight)/2), fnt.r, fnt.g, fnt.b, fnt.a, fontType)
---]]
-
+errorMagnifier.popUps = {}
 errorMagnifier.popupPanel = ISPanel:derive("errorMagnifier.popupPanel")
+errorMagnifier.popupPanel.errorText = ""
+
+function errorMagnifier.popupPanel:render()
+	if not self:isVisible() then return end
+
+	---@type ISPanel
+	local popup = self
+	local countOf = "x"..errorMagnifier.parsedErrors[popup.errorText]
+	local font = UIFont.NewSmall
+	local countOfWidth = getTextManager():MeasureStringX(font, countOf)
+
+	popup:drawText(popup.errorText, 8, 4, 0.9, 0.9, 0.9, 0.9, font)
+	popup:drawText(countOf, popup:getWidth()-countOfWidth-8, 4, 0.9, 0.9, 0.9, 0.9, font)
+end
+
 
 ---@type ISButton
 errorMagnifier.Button = false
 errorMagnifier.currentlyViewing = 1
-errorMagnifier.maxErrorsViewable = 3
+errorMagnifier.maxErrorsViewable = 4
+
+
 function errorMagnifier.errorPanelPopulate()
 	if not errorMagnifier.Button then return end
 
-	if #errorMagnifier.parsedErrorsKeyed <= 0 or (errorMagnifier.errorMessage1 and errorMagnifier.errorMessage1:isVisible()) then
-		for i=1, errorMagnifier.maxErrorsViewable do errorMagnifier["errorMessage"..i]:setVisible(false) end
+	if #errorMagnifier.parsedErrorsKeyed <= 0 or (errorMagnifier.popUps.errorMessage1 and errorMagnifier.popUps.errorMessage1:isVisible()) then
+		for i=1, errorMagnifier.maxErrorsViewable do errorMagnifier.popUps["errorMessage"..i]:setVisible(false) end
 		return
 	end
 
 	for i=1, math.min(#errorMagnifier.parsedErrorsKeyed,errorMagnifier.maxErrorsViewable) do
 		---@type ISPanel
-		local popup = errorMagnifier["errorMessage"..i]
-
-		local errorText = errorMagnifier.parsedErrorsKeyed[errorMagnifier.currentlyViewing-1+i]
-		local countOf = "x"..errorMagnifier.parsedErrors[errorText]
-
-		local countOfWidth = getTextManager():MeasureStringX(UIFont.NewSmall, countOf)
-		local countOfHeight = getTextManager():MeasureStringY(UIFont.NewSmall, countOf)
+		local popup = errorMagnifier.popUps["errorMessage"..i]
+		popup.errorText = errorMagnifier.parsedErrorsKeyed[errorMagnifier.currentlyViewing-1+i]
 		popup:setVisible(true)
-		popup:drawRect(4, 4, popup:getWidth()-8, popup:getHeight()-8, 0.2, 0.2, 0.2, 0.2)
-		popup:drawText(errorText, 3, 3, 0.9, 0.9, 0.9, 0.9, UIFont.NewSmall)
-		popup:drawText(countOf, popup:getWidth()-countOfWidth-4, 0-countOfHeight-4, 0.9, 0.9, 0.9, 0.9, UIFont.NewSmall)
-
 	end
 end
 
@@ -118,12 +109,13 @@ function errorMagnifier.setErrorMagnifierButton()
 	local screenSpan = screenHeight - errorMagnifier.Button:getHeight() - 8
 	local popupHeight, popupWidth = (screenSpan/6)-4, screenWidth/4
 
-	local popupX = 0-popupWidth+(errorMagnifier.Button:getWidth()*1.25)
+	local popupX = 0-popupWidth+(errorMagnifier.Button:getWidth()*1.25)--0+errorMagnifier.Button:getWdith()-popupWidth-8
+	local popupY, popupYOffset = 0-8, popupHeight+4
 
 	for i=1, errorMagnifier.maxErrorsViewable do
-		errorMagnifier["errorMessage"..i] = errorMagnifier.popupPanel:new(popupX,0-15-((popupHeight+4)*i), popupWidth, popupHeight)
+		errorMagnifier.popUps["errorMessage"..i] = errorMagnifier.popupPanel:new(popupX,popupY-(popupYOffset*i), popupWidth, popupHeight)
 		---@type ISPanel
-		local popup = errorMagnifier["errorMessage"..i]
+		local popup = errorMagnifier.popUps["errorMessage"..i]
 		popup:initialise()
 		popup:instantiate()
 		errorMagnifier.Button:addChild(popup)
