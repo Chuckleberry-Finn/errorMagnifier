@@ -79,12 +79,11 @@ function errorMagnifier.errorPanelPopulate()
 
 		local countOfWidth = getTextManager():MeasureStringX(UIFont.NewSmall, countOf)
 		local countOfHeight = getTextManager():MeasureStringY(UIFont.NewSmall, countOf)
-
+		popup:setVisible(true)
 		popup:drawRect(4, 4, popup:getWidth()-8, popup:getHeight()-8, 0.2, 0.2, 0.2, 0.2)
 		popup:drawText(errorText, 3, 3, 0.9, 0.9, 0.9, 0.9, UIFont.NewSmall)
 		popup:drawText(countOf, popup:getWidth()-countOfWidth-4, 0-countOfHeight-4, 0.9, 0.9, 0.9, 0.9, UIFont.NewSmall)
 
-		popup:setVisible(true)
 	end
 end
 
