@@ -54,6 +54,10 @@ end
 errorMagnifier.popUps = {}
 errorMagnifier.popupPanel = ISPanelJoypad:derive("errorMagnifier.popupPanel")
 errorMagnifier.popupPanel.currentErrorNum = 0
+---@type ISButton
+errorMagnifier.Button = false
+errorMagnifier.currentlyViewing = 1
+errorMagnifier.maxErrorsViewable = 5
 
 
 function errorMagnifier.popupPanel:render()
@@ -84,24 +88,17 @@ end
 
 function errorMagnifier.getErrorOntoClipboard(popup)
 	local errorText = errorMagnifier.parsedErrorsKeyed[popup.currentErrorNum]
-	print("firing getErrorOntoClipboard "..tostring(errorText~=nil))
 	if errorText then Clipboard.setClipboard(errorText) end
 end
 
 
 function errorMagnifier.popupPanel:onMouseWheel(del)
-	errorMagnifier.currentlyViewing = errorMagnifier.currentlyViewing+del
-	errorMagnifier.currentlyViewing = math.min(#errorMagnifier.parsedErrorsKeyed-3, errorMagnifier.currentlyViewing)
+	errorMagnifier.currentlyViewing = errorMagnifier.currentlyViewing-del
+	errorMagnifier.currentlyViewing = math.min(#errorMagnifier.parsedErrorsKeyed-(errorMagnifier.maxErrorsViewable-1), errorMagnifier.currentlyViewing)
 	errorMagnifier.currentlyViewing = math.max(1, errorMagnifier.currentlyViewing)
-	print("  errorMagnifier.currentlyViewing: "..errorMagnifier.currentlyViewing)
 	errorMagnifier.errorPanelPopulate()
 	return true
 end
-
----@type ISButton
-errorMagnifier.Button = false
-errorMagnifier.currentlyViewing = 1
-errorMagnifier.maxErrorsViewable = 4
 
 
 function errorMagnifier.errorPanelPopulate()
@@ -153,7 +150,7 @@ function errorMagnifier.setErrorMagnifierButton()
 	errorMagnifier.Button:addToUIManager()
 
 	local screenSpan = screenHeight - errorMagnifier.Button:getHeight() - 8
-	local popupHeight, popupWidth = (screenSpan/9)-4, screenWidth/3
+	local popupHeight, popupWidth = (screenSpan/11)-4, screenWidth/3
 
 	local popupX = screenWidth-popupWidth-8
 	local popupY, popupYOffset = errorMagnifier.Button:getY()-8, popupHeight+4
