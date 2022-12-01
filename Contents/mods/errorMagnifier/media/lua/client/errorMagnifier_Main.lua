@@ -3,11 +3,20 @@ errorMagnifier.parsedErrors = {} --{["error1"]=count1,["error2"]=count2}
 errorMagnifier.parsedErrorsKeyed = {} --{[1]="error1",[2]="error2"}
 errorMagnifier.errorCount = 0
 
+function errorMagnifier.isJavaException(str)
+	if not str then return end
+	local result = string.match(str, "at se.krka.kahlua.vm.KahluaThread.luaMainloop%(KahluaThread.java:(.-)%)")
+	return result
+end
 
 function errorMagnifier.parseErrors()
 
 	local errors = getLuaDebuggerErrors()
 	if errors:size() <= 0 then return end
+
+	errorMagnifier.Button:setVisible(true)
+
+	local newErrors = {}
 
 	for i = errorMagnifier.errorCount+1,errors:size() do
 		local str = errors:get(i-1)
@@ -16,13 +25,57 @@ function errorMagnifier.parseErrors()
 		str = str:gsub("%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-\n","")
 		str = str:gsub("%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-\nSTACK TRACE\n%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-\n","")
 
-		if not errorMagnifier.parsedErrors[str] then
-			table.insert(errorMagnifier.parsedErrorsKeyed, str)
-			errorMagnifier.parsedErrors[str] = 0
-		end
-		errorMagnifier.parsedErrors[str] = errorMagnifier.parsedErrors[str]+1
-
+		table.insert(newErrors,str)
 	end
+
+	for k,str in pairs(newErrors) do
+		if type(str) == "string" then
+
+			local callFrame = string.match(str, "Callframe at: (.-)\n")
+			if callFrame then
+				local entryBefore = newErrors[k-1]
+				newErrors[k] = newErrors[k]..entryBefore --looks nicer after
+				newErrors[k-1] = false
+			end
+
+			local jE = errorMagnifier.isJavaException(str)
+			if jE then
+				if jE=="676" or jE=="900" or jE=="973" then --676/900/973 : header-java-header
+					local entryBefore = newErrors[k-1]
+					local entryAfter = newErrors[k+1]
+					newErrors[k] = entryBefore..newErrors[k] --header-java-X
+					newErrors[k-1] = false
+					newErrors[k+1] = false
+
+				elseif jE=="805" then --805 : java-header
+					local entryAfter = newErrors[k+1]
+					newErrors[k] = entryAfter..newErrors[k] --header-java
+					newErrors[k+1] = false
+
+				elseif jE=="492" then --492 : attempted-header-java-header
+					local entryBefore = newErrors[k-1]
+					local entryBefore2 = newErrors[k-2]
+					local entryAfter = newErrors[k+1]
+					newErrors[k] = entryBefore2..entryBefore..newErrors[k]--attempted-header-java-X
+					newErrors[k-2] = false
+					newErrors[k-1] = false
+					newErrors[k+1] = false
+				end
+			end
+		end
+	end
+
+
+	for k,str in pairs(newErrors) do
+		if type(str) == "string" then
+			if not errorMagnifier.parsedErrors[str] then
+				table.insert(errorMagnifier.parsedErrorsKeyed, str)
+				errorMagnifier.parsedErrors[str] = 0
+			end
+			errorMagnifier.parsedErrors[str] = errorMagnifier.parsedErrors[str]+1
+		end
+	end
+
 	errorMagnifier.errorCount = getLuaDebuggerErrorCount()
 
 	--[[ UGLY PRINT OUT
@@ -36,19 +89,23 @@ function errorMagnifier.parseErrors()
 end
 
 
+
 ---SPAM ERRORS IN DEBUG
 errorMagnifier.spamErrorTest = true
 --TODO: DISABLE BEFORE RELEASE
 if getDebug() and errorMagnifier.spamErrorTest then
-	local function callingNonexistentFunctionTest() DebugLogStream.printException() end
-	Events.EveryTenMinutes.Add(callingNonexistentFunctionTest)
 
-	local function concatStringAndBooleanTest() local testString = "test"..true end
-	Events.EveryTenMinutes.Add(concatStringAndBooleanTest)
-
-	local function lessThanNonNumberTest() if 1 <= "a" then print("miracles happen") end end
-	Events.EveryTenMinutes.Add(lessThanNonNumberTest)
+	Events.OnPlayerMove.Add( function() local testString = "test"..true end)
+	Events.OnPlayerMove.Add( function() if 1 <= "a" then print("miracles happen") end end)
+	Events.OnPlayerMove.Add( function() local paradox = 1+"a" end)
+	Events.OnPlayerMove.Add( function() string.match(nil,"paradox") end)
+	Events.OnPlayerMove.Add( function() local paradox = 1-"a" end)
+	Events.OnPlayerMove.Add( function() DebugLogStream.printException() end)
+	Events.OnPlayerMove.Add( function() local paradox = 1/"a" end)
+	Events.OnPlayerMove.Add( function() local paradox = true+1 end)
+	Events.OnPlayerMove.Add( function() getSpecificPlayer("apple") end)
 end
+
 
 
 errorMagnifier.popUps = {}
@@ -57,7 +114,7 @@ errorMagnifier.popupPanel.currentErrorNum = 0
 ---@type ISButton
 errorMagnifier.Button = false
 errorMagnifier.currentlyViewing = 1
-errorMagnifier.maxErrorsViewable = 5
+errorMagnifier.maxErrorsViewable = 6
 
 
 function errorMagnifier.popupPanel:render()
@@ -88,7 +145,15 @@ end
 
 function errorMagnifier.getErrorOntoClipboard(popup)
 	local errorText = errorMagnifier.parsedErrorsKeyed[popup.currentErrorNum]
-	if errorText then Clipboard.setClipboard(errorText) end
+	if errorText then Clipboard.setClipboard("`"..errorText.."`") end
+end
+
+
+function errorMagnifier.openLogsInExplorer()
+	local cacheDir = getLuaCacheDir()
+	print(cacheDir)
+	--local consoleLog = cacheDir + File.separator + "console.txt"
+	--showFolderInDesktop()
 end
 
 
@@ -111,6 +176,7 @@ function errorMagnifier.errorPanelPopulate()
 		popup:setVisible(true)
 		popup.clipboardButton:setVisible(true)
 	end
+	errorMagnifier.toConsole:setVisible(true)
 end
 
 
@@ -122,6 +188,7 @@ function errorMagnifier.EMButtonOnClick()
 			errorMagnifier.popUps["errorMessage"..i]:setVisible(false)
 			errorMagnifier.popUps["errorMessage"..i].clipboardButton:setVisible(false)
 		end
+		errorMagnifier.toConsole:setVisible(false)
 		return
 	end
 	errorMagnifier.errorPanelPopulate()
@@ -135,6 +202,7 @@ function errorMagnifier.setErrorMagnifierButton()
 	---@type Texture
 	local errorMagTexture = getTexture("media/textures/magGlassError.png")
 	local errorClipTexture = getTexture("media/textures/clipboardError.png")
+	local errorLogTexture = getTexture("media/textures/consolelogError.png")
 	local eW, eH = errorMagTexture:getWidth(), errorMagTexture:getHeight()
 
 	local screenWidth, screenHeight = getCore():getScreenWidth(), getCore():getScreenHeight()
@@ -148,6 +216,12 @@ function errorMagnifier.setErrorMagnifierButton()
 	errorMagnifier.Button:setDisplayBackground(false)
 	errorMagnifier.Button:initialise()
 	errorMagnifier.Button:addToUIManager()
+
+	errorMagnifier.toConsole = ISButton:new(x+32, y-11, 22, 22, "", nil, errorMagnifier.openLogsInExplorer)
+	errorMagnifier.toConsole:setImage(errorLogTexture)
+	errorMagnifier.toConsole:setDisplayBackground(false)
+	errorMagnifier.toConsole:initialise()
+	errorMagnifier.toConsole:addToUIManager()
 
 	local screenSpan = screenHeight - errorMagnifier.Button:getHeight() - 8
 	local popupHeight, popupWidth = (screenSpan/11)-4, screenWidth/3
@@ -172,6 +246,8 @@ function errorMagnifier.setErrorMagnifierButton()
 		popup:setVisible(false)
 		popup.clipboardButton:setVisible(false)
 	end
+	errorMagnifier.toConsole:setVisible(false)
+	errorMagnifier.Button:setVisible(getDebug())
 end
 Events.OnCreatePlayer.Add(errorMagnifier.setErrorMagnifierButton)
 
@@ -180,3 +256,6 @@ Events.OnCreatePlayer.Add(errorMagnifier.setErrorMagnifierButton)
 local function compareErrorCount() if errorMagnifier.errorCount ~= getLuaDebuggerErrorCount() then errorMagnifier.parseErrors() end end
 Events.OnTickEvenPaused.Add(compareErrorCount)
 Events.OnFETick.Add(compareErrorCount)
+
+return errorMagnifier
+---use require to access this
