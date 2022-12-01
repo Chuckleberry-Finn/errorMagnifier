@@ -1,4 +1,6 @@
+version=1
+id=2896041179
 title=errorMagnifier
-description=Strictly for debugging purposes, creates in-game popups to make error reporting clear.
+description=Strictly for debugging purposes, creates in-game popups to make error reporting clear and easy.
 tags=Build 40;Build 41;Misc
 visibility=public

@@ -2,4 +2,4 @@ name=errorMagnifier
 poster=poster.png
 icon=icon.png
 id=errorMagnifier
-description= Strictly for debugging purposes, creates in-game popups to make error reporting clear.
+description= Strictly for debugging purposes, creates in-game popups to make error reporting clear and easy.

@@ -3,11 +3,6 @@ errorMagnifier.parsedErrors = {} --{["error1"]=count1,["error2"]=count2}
 errorMagnifier.parsedErrorsKeyed = {} --{[1]="error1",[2]="error2"}
 errorMagnifier.errorCount = 0
 
-function errorMagnifier.isJavaException(str)
-	if not str then return end
-	local result = string.match(str, "at se.krka.kahlua.vm.KahluaThread.luaMainloop%(KahluaThread.java:(.-)%)")
-	return result
-end
 
 function errorMagnifier.parseErrors()
 
@@ -38,30 +33,32 @@ function errorMagnifier.parseErrors()
 				newErrors[k-1] = false
 			end
 
-			local jE = errorMagnifier.isJavaException(str)
-			if jE then
-				if jE=="676" or jE=="900" or jE=="973" then --676/900/973 : header-java-header
-					local entryBefore = newErrors[k-1]
-					local entryAfter = newErrors[k+1]
-					newErrors[k] = entryBefore..newErrors[k] --header-java-X
-					newErrors[k-1] = false
-					newErrors[k+1] = false
-
-				elseif jE=="805" then --805 : java-header
-					local entryAfter = newErrors[k+1]
-					newErrors[k] = entryAfter..newErrors[k] --header-java
-					newErrors[k+1] = false
-
-				elseif jE=="492" then --492 : attempted-header-java-header
-					local entryBefore = newErrors[k-1]
-					local entryBefore2 = newErrors[k-2]
-					local entryAfter = newErrors[k+1]
-					newErrors[k] = entryBefore2..entryBefore..newErrors[k]--attempted-header-java-X
-					newErrors[k-2] = false
-					newErrors[k-1] = false
-					newErrors[k+1] = false
-				end
+			local attemptedIndex = string.match(str, "java.lang.RuntimeException: attempted index: (.-) of ")
+			if attemptedIndex then --492/641 : attempted-header-java-header
+				local entryBefore2 = newErrors[k-2]
+				local entryBefore = newErrors[k-1]
+				local entryAfter = newErrors[k+1]
+				newErrors[k] = entryBefore2..entryBefore..newErrors[k]--attempted-header-java-X
+				newErrors[k-2] = false
+				newErrors[k-1] = false
+				newErrors[k+1] = false
 			end
+
+			local jE = string.match(str, "at se.krka.kahlua.vm.KahluaThread.luaMainloop%(KahluaThread.java:(.-)%)")
+			if jE and (not attemptedIndex) and (not callFrame) then
+
+				local entryBefore = newErrors[k-1]
+				local entryAfter = newErrors[k+1]
+
+				newErrors[k] = entryAfter..newErrors[k] --header-java
+				newErrors[k+1] = false
+
+				if entryBefore and entryAfter and entryBefore == entryAfter then --676/900/973 : header-java-header
+					newErrors[k-1] = false
+				end --else = --805 : java-header
+
+			end
+
 		end
 	end
 
@@ -91,10 +88,9 @@ end
 
 
 ---SPAM ERRORS IN DEBUG
-errorMagnifier.spamErrorTest = true
+errorMagnifier.spamErrorTest = false
 --TODO: DISABLE BEFORE RELEASE
 if getDebug() and errorMagnifier.spamErrorTest then
-
 	Events.OnPlayerMove.Add( function() local testString = "test"..true end)
 	Events.OnPlayerMove.Add( function() if 1 <= "a" then print("miracles happen") end end)
 	Events.OnPlayerMove.Add( function() local paradox = 1+"a" end)
@@ -140,6 +136,10 @@ function errorMagnifier.popupPanel:render()
 	popup:drawText(countOf, popup:getWidth()-countOfWidth-8, 4, 0.9, 0.9, 0.9, 0.9, font)
 	popup:drawText(outOf, popup:getWidth()-countOfWidth-8-outOfWidth-8, 4, 0.9, 0.9, 0.9, 0.6, font)
 	popup.clipboardButton:bringToTop()
+
+	if not isDesktopOpenSupported() then
+		errorMagnifier.Button:drawTextRight("Errors logged in: "..Core.getMyDocumentFolder()..getFileSeparator().."console.txt", 0-errorMagnifier.toConsole:getWidth(), 0-fontHeight/2, 0.7, 0.7, 0.7, 0.5, font)
+	end
 end
 
 
@@ -149,11 +149,11 @@ function errorMagnifier.getErrorOntoClipboard(popup)
 end
 
 
+
 function errorMagnifier.openLogsInExplorer()
-	local cacheDir = getLuaCacheDir()
-	print(cacheDir)
-	--local consoleLog = cacheDir + File.separator + "console.txt"
-	--showFolderInDesktop()
+	local cacheDir = Core.getMyDocumentFolder()
+	print("dir:"..cacheDir.."  isDesktopOpenSupported:"..tostring(isDesktopOpenSupported()))
+	showFolderInDesktop(cacheDir)
 end
 
 
@@ -176,8 +176,9 @@ function errorMagnifier.errorPanelPopulate()
 		popup:setVisible(true)
 		popup.clipboardButton:setVisible(true)
 	end
-	errorMagnifier.toConsole:setVisible(true)
+	errorMagnifier.toConsole:setVisible(isDesktopOpenSupported())
 end
+
 
 
 function errorMagnifier.EMButtonOnClick()
@@ -195,14 +196,13 @@ function errorMagnifier.EMButtonOnClick()
 end
 
 
-
 function errorMagnifier.setErrorMagnifierButton()
 	if errorMagnifier.Button then return errorMagnifier.Button end
 
 	---@type Texture
 	local errorMagTexture = getTexture("media/textures/magGlassError.png")
 	local errorClipTexture = getTexture("media/textures/clipboardError.png")
-	local errorLogTexture = getTexture("media/textures/consolelogError.png")
+	local errorLogTexture = getTexture("media/textures/consolelogErrorFolder.png")
 	local eW, eH = errorMagTexture:getWidth(), errorMagTexture:getHeight()
 
 	local screenWidth, screenHeight = getCore():getScreenWidth(), getCore():getScreenHeight()
@@ -217,7 +217,7 @@ function errorMagnifier.setErrorMagnifierButton()
 	errorMagnifier.Button:initialise()
 	errorMagnifier.Button:addToUIManager()
 
-	errorMagnifier.toConsole = ISButton:new(x+32, y-11, 22, 22, "", nil, errorMagnifier.openLogsInExplorer)
+	errorMagnifier.toConsole = ISButton:new(x-22-4, y+2, 22, 22, "", nil, errorMagnifier.openLogsInExplorer)
 	errorMagnifier.toConsole:setImage(errorLogTexture)
 	errorMagnifier.toConsole:setDisplayBackground(false)
 	errorMagnifier.toConsole:initialise()
