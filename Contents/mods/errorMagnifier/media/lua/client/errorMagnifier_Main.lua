@@ -27,6 +27,12 @@ function errorMagnifier.parseErrors()
 	for k,str in pairs(newErrors) do
 		if type(str) == "string" then
 
+			local causedBy = string.match(str,"Caused by: (.+)(... .-)")
+			if causedBy then
+				causedBy = "Caused by: "..causedBy.."\n"
+				str = causedBy..str
+			end
+
 			local callFrame = string.match(str, "Callframe at: (.-)") and string.sub(str,1,string.len("Callframe at: "))=="Callframe at: "
 			if callFrame then
 				local entryBefore = newErrors[k-1]
