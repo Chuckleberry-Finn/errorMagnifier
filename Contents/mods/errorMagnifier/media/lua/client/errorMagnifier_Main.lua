@@ -5,6 +5,7 @@ errorMagnifier.errorCount = 0
 
 
 function errorMagnifier.parseErrors()
+	if not errorMagnifier.Button then return end
 
 	local errors = getLuaDebuggerErrors()
 	if errors:size() <= 0 then return end
@@ -26,11 +27,15 @@ function errorMagnifier.parseErrors()
 	for k,str in pairs(newErrors) do
 		if type(str) == "string" then
 
-			local callFrame = string.match(str, "Callframe at: (.-)\n")
+			local callFrame = string.match(str, "Callframe at: (.-)") and string.sub(str,1,string.len("Callframe at: "))=="Callframe at: "
 			if callFrame then
 				local entryBefore = newErrors[k-1]
-				newErrors[k] = newErrors[k]..entryBefore --looks nicer after
-				newErrors[k-1] = false
+
+				-- java bit looks nicer after
+				if entryBefore then
+					newErrors[k] = newErrors[k]..entryBefore
+					newErrors[k-1] = false
+				end
 			end
 
 			local attemptedIndex = string.match(str, "java.lang.RuntimeException: attempted index: (.-) of ")
@@ -38,10 +43,18 @@ function errorMagnifier.parseErrors()
 				local entryBefore2 = newErrors[k-2]
 				local entryBefore = newErrors[k-1]
 				local entryAfter = newErrors[k+1]
-				newErrors[k] = entryBefore2..entryBefore..newErrors[k]--attempted-header-java-X
-				newErrors[k-2] = false
-				newErrors[k-1] = false
-				newErrors[k+1] = false
+				--attempted-header-java-X
+				if entryAfter then
+					newErrors[k+1] = false
+				end
+				if entryBefore then
+					newErrors[k] = entryBefore..newErrors[k]
+					newErrors[k-1] = false
+				end
+				if entryBefore2 then
+					newErrors[k] = entryBefore2..newErrors[k]
+					newErrors[k-2] = false
+				end
 			end
 
 			local jE = string.match(str, "at se.krka.kahlua.vm.KahluaThread.luaMainloop%(KahluaThread.java:(.-)%)")
@@ -50,10 +63,13 @@ function errorMagnifier.parseErrors()
 				local entryBefore = newErrors[k-1]
 				local entryAfter = newErrors[k+1]
 
-				newErrors[k] = entryAfter..newErrors[k] --header-java
-				newErrors[k+1] = false
+				--676/900/973 : header-java-header
+				if entryAfter then
+					newErrors[k] = entryAfter..newErrors[k] --header-java
+					newErrors[k+1] = false
+				end
 
-				if entryBefore and entryAfter and entryBefore == entryAfter then --676/900/973 : header-java-header
+				if entryBefore and entryAfter and entryBefore == entryAfter then
 					newErrors[k-1] = false
 				end --else = --805 : java-header
 
@@ -73,7 +89,7 @@ function errorMagnifier.parseErrors()
 		end
 	end
 
-	errorMagnifier.errorCount = getLuaDebuggerErrorCount()
+	errorMagnifier.errorCount = getLuaDebuggerErrors():size()
 
 	--[[ UGLY PRINT OUT
 	local pseudoKey = 0
@@ -253,7 +269,7 @@ Events.OnCreatePlayer.Add(errorMagnifier.setErrorMagnifierButton)
 
 
 ---pass checks every tick
-local function compareErrorCount() if errorMagnifier.errorCount ~= getLuaDebuggerErrorCount() then errorMagnifier.parseErrors() end end
+local function compareErrorCount() if errorMagnifier.errorCount ~= getLuaDebuggerErrors():size() then errorMagnifier.parseErrors() end end
 Events.OnTickEvenPaused.Add(compareErrorCount)
 Events.OnFETick.Add(compareErrorCount)
 
