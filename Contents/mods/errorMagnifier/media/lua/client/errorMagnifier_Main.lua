@@ -174,8 +174,11 @@ end
 
 function errorMagnifier.openLogsInExplorer()
 	local cacheDir = Core.getMyDocumentFolder()
-	print("dir:"..cacheDir.."  isDesktopOpenSupported:"..tostring(isDesktopOpenSupported()))
-	showFolderInDesktop(cacheDir)
+	if getDebug() then print("dir:"..cacheDir.."  isDesktopOpenSupported:"..tostring(isDesktopOpenSupported())) end
+
+	if isDesktopOpenSupported() then showFolderInDesktop(cacheDir)
+	else openUrl(cacheDir)
+	end
 end
 
 
@@ -211,7 +214,6 @@ function errorMagnifier.EMButtonOnClick()
 			errorMagnifier.popUps["errorMessage"..i]:setVisible(false)
 			errorMagnifier.popUps["errorMessage"..i].clipboardButton:setVisible(false)
 		end
-		errorMagnifier.toConsole:setVisible(false)
 		return
 	end
 	errorMagnifier.errorPanelPopulate()
@@ -232,6 +234,8 @@ function errorMagnifier.setErrorMagnifierButton()
 	local fontHeight = getTextManager():getFontHeight(UIFont.NewSmall)
 	local x = screenWidth - eW - 15
 	local y = screenHeight - (fontHeight*2) - eH - 15
+
+	if getWorld():getGameMode() == "Multiplayer" then y = y-22 end
 
 	errorMagnifier.Button = ISButton:new(x, y, eW, eH, "", nil, errorMagnifier.EMButtonOnClick)
 	errorMagnifier.Button:setImage(errorMagTexture)
@@ -268,7 +272,7 @@ function errorMagnifier.setErrorMagnifierButton()
 		popup:setVisible(false)
 		popup.clipboardButton:setVisible(false)
 	end
-	errorMagnifier.toConsole:setVisible(false)
+	--errorMagnifier.toConsole:setVisible(false)
 	errorMagnifier.Button:setVisible(getDebug())
 end
 Events.OnCreatePlayer.Add(errorMagnifier.setErrorMagnifierButton)
