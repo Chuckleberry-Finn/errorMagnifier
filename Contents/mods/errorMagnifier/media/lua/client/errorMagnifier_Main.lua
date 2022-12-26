@@ -108,9 +108,8 @@ function errorMagnifier.parseErrors()
 end
 
 
-
----SPAM ERRORS IN DEBUG
 errorMagnifier.spamErrorTest = false
+errorMagnifier.showOnDebug = false
 --TODO: DISABLE BEFORE RELEASE
 if getDebug() and errorMagnifier.spamErrorTest then
 	Events.OnPlayerMove.Add( function() local testString = "test"..true end)
@@ -160,7 +159,7 @@ function errorMagnifier.popupPanel:render()
 	popup.clipboardButton:bringToTop()
 
 	if not isDesktopOpenSupported() then
-		errorMagnifier.Button:drawTextRight("Errors logged in: "..Core.getMyDocumentFolder()..getFileSeparator().."console.txt", 0-errorMagnifier.toConsole:getWidth(), 0-fontHeight/2, 0.7, 0.7, 0.7, 0.5, font)
+		errorMagnifier.Button:drawTextRight("Errors logged in: "..Core.getMyDocumentFolder()..getFileSeparator().."console.txt", 0-(errorMagnifier.toConsole:getWidth()*2), 0-fontHeight/2, 0.7, 0.7, 0.7, 0.5, font)
 	end
 end
 
@@ -201,6 +200,7 @@ function errorMagnifier.errorPanelPopulate()
 		popup:setVisible(true)
 		popup.clipboardButton:setVisible(true)
 	end
+	errorMagnifier.toConsole:setVisible(true)
 end
 
 
@@ -212,8 +212,8 @@ function errorMagnifier.EMButtonOnClick()
 		for i=1, errorMagnifier.maxErrorsViewable do
 			errorMagnifier.popUps["errorMessage"..i]:setVisible(false)
 			errorMagnifier.popUps["errorMessage"..i].clipboardButton:setVisible(false)
-
 		end
+		errorMagnifier.toConsole:setVisible(false)
 		return
 	end
 	errorMagnifier.errorPanelPopulate()
@@ -272,7 +272,8 @@ function errorMagnifier.setErrorMagnifierButton()
 		popup:setVisible(false)
 		popup.clipboardButton:setVisible(false)
 	end
-	errorMagnifier.Button:setVisible(getDebug())
+	errorMagnifier.toConsole:setVisible(false)
+	errorMagnifier.Button:setVisible(getDebug() and errorMagnifier.showOnDebug)
 end
 Events.OnCreatePlayer.Add(errorMagnifier.setErrorMagnifierButton)
 
