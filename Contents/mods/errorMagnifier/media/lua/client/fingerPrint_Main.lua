@@ -15,7 +15,7 @@ function _G.print(...)
 					if modInfo then
 						local modID = modInfo:getId()
 						if modID and modID~="errorMagnifier" then
-							printText = "\["..modID.."\]"
+							printText = "\["..modID.."\] "
 						end
 					end
 				end
