@@ -232,18 +232,18 @@ function errorMagnifier.setErrorMagnifierButton()
 	local screenWidth, screenHeight = getCore():getScreenWidth(), getCore():getScreenHeight()
 
 	local fontHeight = getTextManager():getFontHeight(UIFont.NewSmall)
-	local x = screenWidth - eW - 15
+	local x = screenWidth - eW
 	local y = screenHeight - (fontHeight*2) - eH - 15
 
 	if getWorld():getGameMode() == "Multiplayer" then y = y-22 end
 
-	errorMagnifier.Button = ISButton:new(x, y, eW, eH, "", nil, errorMagnifier.EMButtonOnClick)
+	errorMagnifier.Button = ISButton:new(x, y+2, 22, 22, "", nil, errorMagnifier.EMButtonOnClick)
 	errorMagnifier.Button:setImage(errorMagTexture)
 	errorMagnifier.Button:setDisplayBackground(false)
 	errorMagnifier.Button:initialise()
 	errorMagnifier.Button:addToUIManager()
 
-	errorMagnifier.toConsole = ISButton:new(x-22-4, y+2, 22, 22, "", nil, errorMagnifier.openLogsInExplorer)
+	errorMagnifier.toConsole = ISButton:new(x-30, y+2, 22, 22, "", nil, errorMagnifier.openLogsInExplorer)
 	errorMagnifier.toConsole:setImage(errorLogTexture)
 	errorMagnifier.toConsole:setDisplayBackground(false)
 	errorMagnifier.toConsole:initialise()
