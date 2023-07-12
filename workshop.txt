@@ -1,7 +1,8 @@
 version=1
 id=2896041179
 title=errorMagnifier
-description=[h3]Strictly for debugging purposes, creates in-game popups to make error reporting clear and easy.[/h3]
+description=[h2]Creates a button that appears when an error occurs.
+description=Makes error reporting clear and easy for less tech-savvy players.[/h2]
 description=
 description=[url=https://ko-fi.com/chuckleberryfinn][img]https://raw.githubusercontent.com/ChuckTheSheep/chuckImages/main/kofi.png[/img][/url]
 description=
