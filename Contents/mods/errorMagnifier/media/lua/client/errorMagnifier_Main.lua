@@ -5,7 +5,6 @@ errorMagnifier.errorCount = 0
 
 
 function errorMagnifier.parseErrors()
-	if not errorMagnifier.Button then return end
 
 	local errors = getLuaDebuggerErrors()
 	if errors:size() <= 0 then return end
@@ -108,26 +107,6 @@ function errorMagnifier.parseErrors()
 end
 
 
-errorMagnifier.spamErrorTest = false
-errorMagnifier.showOnDebug = false
---TODO: DISABLE BEFORE RELEASE
-if getDebug() and errorMagnifier.spamErrorTest then
-	local function ERRORS()
-		Events.OnPlayerMove.Add( function() local testString = "test"..true end)
-		Events.OnPlayerMove.Add( function() if 1 <= "a" then print("miracles happen") end end)
-		Events.OnPlayerMove.Add( function() local paradox = 1+"a" end)
-		Events.OnPlayerMove.Add( function() string.match(nil,"paradox") end)
-		Events.OnPlayerMove.Add( function() local paradox = 1-"a" end)
-		Events.OnPlayerMove.Add( function() DebugLogStream.printException() end)
-		Events.OnPlayerMove.Add( function() local paradox = 1/"a" end)
-		Events.OnPlayerMove.Add( function() local paradox = true+1 end)
-		Events.OnPlayerMove.Add( function() getSpecificPlayer("apple") end)
-		getSpecificPlayer("mango")
-	end
-	Events.OnMainMenuEnter.Add(ERRORS)
-end
-
-
 errorMagnifier.popUps = {}
 errorMagnifier.popupPanel = ISPanelJoypad:derive("errorMagnifier.popupPanel")
 errorMagnifier.popupPanel.currentErrorNum = 0
@@ -135,6 +114,9 @@ errorMagnifier.popupPanel.currentErrorNum = 0
 errorMagnifier.Button = false
 errorMagnifier.currentlyViewing = 1
 errorMagnifier.maxErrorsViewable = 6
+
+errorMagnifier.spamErrorTest = false
+errorMagnifier.showOnDebug = false
 
 
 function errorMagnifier.popupPanel:render()
@@ -177,8 +159,6 @@ end
 
 function errorMagnifier:openLogsInExplorer()
 	local cacheDir = Core.getMyDocumentFolder()
-	if getDebug() then print("dir:"..cacheDir.."  isDesktopOpenSupported:"..tostring(isDesktopOpenSupported())) end
-
 	if isDesktopOpenSupported() then showFolderInDesktop(cacheDir)
 	else openUrl(cacheDir)
 	end
@@ -210,7 +190,6 @@ end
 
 
 function errorMagnifier:EMButtonOnClick()
-	if not errorMagnifier.Button then return end
 	if #errorMagnifier.parsedErrorsKeyed <= 0 or (errorMagnifier.popUps.errorMessage1 and errorMagnifier.popUps.errorMessage1:isVisible()) then
 		for i=1, errorMagnifier.maxErrorsViewable do
 			errorMagnifier.popUps["errorMessage"..i]:setVisible(false)
@@ -223,7 +202,7 @@ function errorMagnifier:EMButtonOnClick()
 end
 
 
-function errorMagnifier.setErrorMagnifierButton()
+function errorMagnifier.setErrorMagnifierButton(forceShow)
 
 	---@type Texture
 	local errorMagTexture = getTexture("media/textures/magGlassError.png")
@@ -239,21 +218,19 @@ function errorMagnifier.setErrorMagnifierButton()
 
 	if getWorld():getGameMode() == "Multiplayer" then y = y-22 end
 
-	if not errorMagnifier.Button then
-		errorMagnifier.Button = ISButton:new(x, y+2, 22, 22, "", nil, errorMagnifier.EMButtonOnClick)
-		errorMagnifier.Button:setImage(errorMagTexture)
-		errorMagnifier.Button:setDisplayBackground(false)
-		errorMagnifier.Button:initialise()
-		errorMagnifier.Button:addToUIManager()
-		errorMagnifier.Button:setAlwaysOnTop(true)
+	errorMagnifier.Button = errorMagnifier.Button or ISButton:new(x, y+2, 22, 22, "", nil, errorMagnifier.EMButtonOnClick)
+	errorMagnifier.Button:setImage(errorMagTexture)
+	errorMagnifier.Button:setDisplayBackground(false)
+	errorMagnifier.Button:initialise()
+	errorMagnifier.Button:addToUIManager()
+	errorMagnifier.Button:setAlwaysOnTop(true)
 
-		errorMagnifier.toConsole = ISButton:new(x-30, y+2, 22, 22, "", nil, errorMagnifier.openLogsInExplorer)
-		errorMagnifier.toConsole:setImage(errorLogTexture)
-		errorMagnifier.toConsole:setDisplayBackground(false)
-		errorMagnifier.toConsole:initialise()
-		errorMagnifier.toConsole:addToUIManager()
-		errorMagnifier.toConsole:setAlwaysOnTop(true)
-	end
+	errorMagnifier.toConsole = errorMagnifier.toConsole or ISButton:new(x-30, y+2, 22, 22, "", nil, errorMagnifier.openLogsInExplorer)
+	errorMagnifier.toConsole:setImage(errorLogTexture)
+	errorMagnifier.toConsole:setDisplayBackground(false)
+	errorMagnifier.toConsole:initialise()
+	errorMagnifier.toConsole:addToUIManager()
+	errorMagnifier.toConsole:setAlwaysOnTop(true)
 
 	local screenSpan = screenHeight - errorMagnifier.Button:getHeight() - 8
 	local popupHeight, popupWidth = (screenSpan/11)-4, screenWidth/3
@@ -279,19 +256,8 @@ function errorMagnifier.setErrorMagnifierButton()
 		popup.clipboardButton:setVisible(false)
 	end
 	errorMagnifier.toConsole:setVisible(false)
-	errorMagnifier.Button:setVisible(getDebug() and errorMagnifier.showOnDebug)
+	errorMagnifier.Button:setVisible(forceShow or (getDebug() and errorMagnifier.showOnDebug))
 end
-
-
-Events.OnLoad.Add(errorMagnifier.setErrorMagnifierButton)
-Events.OnMainMenuEnter.Add(errorMagnifier.setErrorMagnifierButton)
-if isServer() then Events.OnGameBoot.Add(errorMagnifier.setErrorMagnifierButton) end
-
-
----pass checks every tick
-local function compareErrorCount() if errorMagnifier.errorCount ~= getLuaDebuggerErrors():size() then errorMagnifier.parseErrors() end end
-Events.OnTickEvenPaused.Add(compareErrorCount)
-Events.OnFETick.Add(compareErrorCount)
 
 
 return errorMagnifier
