@@ -159,6 +159,7 @@ function errorMagnifier.popupPanel:render()
 	popup:clearStencilRect()
 	popup:drawText(countOf, popup:getWidth()-countOfWidth-8, 4, 0.9, 0.9, 0.9, 0.9, font)
 	popup:drawText(outOf, popup:getWidth()-countOfWidth-8-outOfWidth-8, 4, 0.9, 0.9, 0.9, 0.6, font)
+	popup:bringToTop()
 	popup.clipboardButton:bringToTop()
 
 	if not isDesktopOpenSupported() then
@@ -244,12 +245,14 @@ function errorMagnifier.setErrorMagnifierButton()
 		errorMagnifier.Button:setDisplayBackground(false)
 		errorMagnifier.Button:initialise()
 		errorMagnifier.Button:addToUIManager()
+		errorMagnifier.Button:setAlwaysOnTop(true)
 
 		errorMagnifier.toConsole = ISButton:new(x-30, y+2, 22, 22, "", nil, errorMagnifier.openLogsInExplorer)
 		errorMagnifier.toConsole:setImage(errorLogTexture)
 		errorMagnifier.toConsole:setDisplayBackground(false)
 		errorMagnifier.toConsole:initialise()
 		errorMagnifier.toConsole:addToUIManager()
+		errorMagnifier.toConsole:setAlwaysOnTop(true)
 	end
 
 	local screenSpan = screenHeight - errorMagnifier.Button:getHeight() - 8
