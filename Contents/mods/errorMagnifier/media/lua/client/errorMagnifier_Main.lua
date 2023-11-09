@@ -108,8 +108,8 @@ function errorMagnifier.parseErrors()
 end
 
 
-errorMagnifier.spamErrorTest = true
-errorMagnifier.showOnDebug = true
+errorMagnifier.spamErrorTest = false
+errorMagnifier.showOnDebug = false
 --TODO: DISABLE BEFORE RELEASE
 if getDebug() and errorMagnifier.spamErrorTest then
 	local function ERRORS()
