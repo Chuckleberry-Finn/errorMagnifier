@@ -5,7 +5,7 @@ Events.OnLoad.Add(errorMagnifier.setErrorMagnifierButton)
 Events.OnGameBoot.Add(errorMagnifier.setErrorMagnifierButton)
 
 ---pass checks every tick
-local function compareErrorCount() if errorMagnifier.errorCount ~= getLuaDebuggerErrors():size() then errorMagnifier.parseErrors() end end
+local function compareErrorCount() if errorMagnifier and errorMagnifier.errorCount ~= getLuaDebuggerErrors():size() then errorMagnifier.parseErrors() end end
 Events.OnTickEvenPaused.Add(compareErrorCount)
 Events.OnFETick.Add(compareErrorCount)
 
