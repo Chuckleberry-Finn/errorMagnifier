@@ -10,12 +10,7 @@ Events.OnTickEvenPaused.Add(compareErrorCount)
 Events.OnFETick.Add(compareErrorCount)
 
 
-local modCountSystem = require "chuckleberryFinnModding_modCountSystem"
-if modCountSystem then modCountSystem.pullAndAddModID()
-else print("ERR: MISSING MOD: `ChuckleberryFinnAlertSystem` (Workshop ID: `3077900375`)") end
-
-
---TODO: DISABLE BEFORE RELEASE
+--TODO: CHECK FLAGS ARE SET TO FALSE BEFORE RELEASE (in errorMagnifier_Main)
 if getDebug() and errorMagnifier.spamErrorTest then
 
     if errorMagnifier.showOnDebug then

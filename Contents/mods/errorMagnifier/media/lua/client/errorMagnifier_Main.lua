@@ -115,6 +115,7 @@ errorMagnifier.Button = false
 errorMagnifier.currentlyViewing = 1
 errorMagnifier.maxErrorsViewable = 6
 
+--TODO: CHECK FLAGS ARE SET TO FALSE BEFORE RELEASE
 errorMagnifier.spamErrorTest = false
 errorMagnifier.showOnDebug = false
 
