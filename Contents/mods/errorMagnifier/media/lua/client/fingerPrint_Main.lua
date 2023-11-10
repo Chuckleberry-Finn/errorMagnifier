@@ -11,12 +11,11 @@ function _G.print(...)
 			if luaCallFrame ~= nil and luaCallFrame then
 				local fileDir = getFilenameOfCallframe(luaCallFrame)
 				if fileDir then
-					local modInfo = getModInfo(fileDir:match("(.-)media/"))
-					if modInfo then
-						local modID = modInfo:getId()
-						if modID and modID~="errorMagnifier" then
-							printText = "\["..modID.."\] "
-						end
+					local modInfoDir = fileDir:match("(.-)media/")
+					local modInfo = modInfoDir and getModInfo(modInfoDir)
+					local modID = modInfo and modInfo:getId()
+					if modID and modID~="errorMagnifier" then
+						printText = "\["..modID.."\] "
 					end
 				end
 			end
