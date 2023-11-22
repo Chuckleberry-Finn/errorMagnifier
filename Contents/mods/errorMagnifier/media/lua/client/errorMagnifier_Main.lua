@@ -143,6 +143,7 @@ function errorMagnifier.popupPanel:render()
 	popup:drawText(countOf, popup:getWidth()-countOfWidth-8, 4, 0.9, 0.9, 0.9, 0.9, font)
 	popup:drawText(outOf, popup:getWidth()-countOfWidth-8-outOfWidth-8, 4, 0.9, 0.9, 0.9, 0.6, font)
 	popup:bringToTop()
+	popup.clipboardButton:setAlwaysOnTop(true)
 	popup.clipboardButton:bringToTop()
 
 	if not isDesktopOpenSupported() then
