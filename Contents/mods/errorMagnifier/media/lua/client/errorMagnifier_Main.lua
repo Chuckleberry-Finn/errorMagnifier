@@ -154,7 +154,14 @@ end
 
 function errorMagnifier:getErrorOntoClipboard(popup)
 	local errorText = errorMagnifier.parsedErrorsKeyed[popup.currentErrorNum]
-	if errorText then Clipboard.setClipboard("`"..errorText.."`") end
+
+	print("popup:", tostring(popup), tostring(popup.currentErrorNum))
+
+	if errorText then
+		Clipboard.setClipboard("`"..errorText.."`")
+		print("Copied to clipboard!")
+	end
+
 end
 
 
@@ -248,7 +255,7 @@ function errorMagnifier.setErrorMagnifierButton(forceShow)
 		popup:instantiate()
 		popup:addToUIManager()
 
-		popup.clipboardButton = ISButton:new(popupX+popupWidth-26, (popupY-(popupYOffset*i))+10+fontHeight, 22, 22, "", popup, errorMagnifier.getErrorOntoClipboard)
+		popup.clipboardButton = ISButton:new(popupX+popupWidth-26, (popupY-(popupYOffset*i))+10+fontHeight, 22, 22, "", nil, function() errorMagnifier:getErrorOntoClipboard(popup) end )
 		popup.clipboardButton:setImage(errorClipTexture)
 		popup.clipboardButton:setDisplayBackground(false)
 		popup.clipboardButton:initialise()
