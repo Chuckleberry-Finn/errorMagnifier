@@ -154,14 +154,11 @@ end
 
 function errorMagnifier:getErrorOntoClipboard(popup)
 	local errorText = errorMagnifier.parsedErrorsKeyed[popup.currentErrorNum]
-
-	print("popup:", tostring(popup), tostring(popup.currentErrorNum))
-
+	
 	if errorText then
 		Clipboard.setClipboard("`"..errorText.."`")
 		print("Copied to clipboard!")
 	end
-
 end
 
 
