@@ -8,8 +8,9 @@ function errorMagnifier.parseErrors()
 
 	local errors = getLuaDebuggerErrors()
 	if errors:size() <= 0 then return end
+	if not errorMagnifier.Button then return end
 
-	errorMagnifier.Button:setVisible(true)
+	errorMagnifier.Button:setVisible(not errorMagnifier.hiddenMode)
 
 	local newErrors = {}
 
@@ -116,8 +117,8 @@ errorMagnifier.currentlyViewing = 1
 errorMagnifier.maxErrorsViewable = 6
 
 --TODO: CHECK FLAGS ARE SET TO FALSE BEFORE RELEASE
-errorMagnifier.spamErrorTest = false
-errorMagnifier.showOnDebug = false
+errorMagnifier.spamErrorTest = true
+errorMagnifier.showOnDebug = true
 
 
 function errorMagnifier.popupPanel:render()
@@ -147,7 +148,8 @@ function errorMagnifier.popupPanel:render()
 	popup.clipboardButton:bringToTop()
 
 	if not isDesktopOpenSupported() then
-		errorMagnifier.Button:drawTextRight("Errors logged in: "..Core.getMyDocumentFolder()..getFileSeparator().."console.txt", 0-(errorMagnifier.toConsole:getWidth()*2), 0-fontHeight/2, 0.7, 0.7, 0.7, 0.5, font)
+		local text = "Errors logged in: "..Core.getMyDocumentFolder()..getFileSeparator().."console.txt".."\n Right click Error-Magnifier button to hide, visible through Menu."
+		errorMagnifier.Button:drawTextRight(text, 0-(errorMagnifier.toConsole:getWidth()*2), 0-fontHeight/2, 0.7, 0.7, 0.7, 0.5, font)
 	end
 end
 
@@ -160,7 +162,6 @@ function errorMagnifier:getErrorOntoClipboard(popup)
 		print("Copied to clipboard!")
 	end
 end
-
 
 
 function errorMagnifier:openLogsInExplorer()
@@ -194,17 +195,28 @@ function errorMagnifier.errorPanelPopulate()
 end
 
 
-
-function errorMagnifier:EMButtonOnClick()
+function errorMagnifier.hideErrorPanels()
 	if #errorMagnifier.parsedErrorsKeyed <= 0 or (errorMagnifier.popUps.errorMessage1 and errorMagnifier.popUps.errorMessage1:isVisible()) then
 		for i=1, errorMagnifier.maxErrorsViewable do
 			errorMagnifier.popUps["errorMessage"..i]:setVisible(false)
 			errorMagnifier.popUps["errorMessage"..i].clipboardButton:setVisible(false)
 		end
 		errorMagnifier.toConsole:setVisible(false)
-		return
+		return true
 	end
-	errorMagnifier.errorPanelPopulate()
+end
+
+
+function errorMagnifier:EMButtonOnClick()
+	local closed = errorMagnifier.hideErrorPanels()
+	if not closed then errorMagnifier.errorPanelPopulate() end
+end
+
+
+function errorMagnifier.hideErrorMag()
+	errorMagnifier.hideErrorPanels()
+	errorMagnifier.Button:setVisible(false)
+	errorMagnifier.hiddenMode = true
 end
 
 
@@ -220,11 +232,14 @@ function errorMagnifier.setErrorMagnifierButton(forceShow)
 
 	local fontHeight = getTextManager():getFontHeight(UIFont.NewSmall)
 	local x = screenWidth - eW
-	local y = screenHeight - (fontHeight*2) - eH - 15
+	local y = screenHeight - (fontHeight*2) - eH - 30
 
 	if getWorld():getGameMode() == "Multiplayer" then y = y-22 end
 
 	errorMagnifier.Button = errorMagnifier.Button or ISButton:new(x, y+2, 22, 22, "", nil, errorMagnifier.EMButtonOnClick)
+
+	errorMagnifier.Button.onRightMouseUp = errorMagnifier.hideErrorMag
+
 	errorMagnifier.Button:setImage(errorMagTexture)
 	errorMagnifier.Button:setDisplayBackground(false)
 	errorMagnifier.Button:initialise()
@@ -263,6 +278,19 @@ function errorMagnifier.setErrorMagnifierButton(forceShow)
 	end
 	errorMagnifier.toConsole:setVisible(false)
 	errorMagnifier.Button:setVisible(forceShow or (getDebug() and errorMagnifier.showOnDebug))
+end
+
+
+local MainScreen_onEnterFromGame = MainScreen.onEnterFromGame
+function MainScreen:onEnterFromGame()
+	MainScreen_onEnterFromGame(self)
+	if #errorMagnifier.parsedErrorsKeyed > 0 then errorMagnifier.Button:setVisible(true) end
+end
+
+local MainScreen_onReturnToGame = MainScreen.onReturnToGame
+function MainScreen:onReturnToGame()
+	MainScreen_onReturnToGame(self)
+	if errorMagnifier.hiddenMode then errorMagnifier.hideErrorMag() end
 end
 
 
