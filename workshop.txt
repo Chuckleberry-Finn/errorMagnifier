@@ -1,8 +1,8 @@
 version=1
 id=2896041179
 title=errorMagnifier
-description=[h2]Creates a button that appears when an error occurs.
-description=Makes error reporting clear and easy for less tech-savvy players.[/h2]
+description=[h2]Creates a button when an error occurs.
+description=Makes error reporting clear and easy for less tech-savvy.[/h2]
 description=
 description=[url=https://ko-fi.com/chuckleberryfinn][img]https://raw.githubusercontent.com/ChuckTheSheep/chuckImages/main/kofi.png[/img][/url]
 description=
