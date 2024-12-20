@@ -118,7 +118,7 @@ errorMagnifier.maxErrorsViewable = 6
 
 --TODO: CHECK FLAGS ARE SET TO FALSE BEFORE RELEASE
 errorMagnifier.spamErrorTest = false
-errorMagnifier.showOnDebug = true
+errorMagnifier.showOnDebug = false
 
 
 function errorMagnifier.popupPanel:render()
