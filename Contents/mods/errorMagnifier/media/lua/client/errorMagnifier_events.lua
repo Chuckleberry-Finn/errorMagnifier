@@ -2,7 +2,8 @@ local errorMagnifier = require "errorMagnifier_Main"
 if not errorMagnifier then return end
 
 Events.OnLoad.Add(errorMagnifier.setErrorMagnifierButton)
-Events.OnGameBoot.Add(errorMagnifier.setErrorMagnifierButton)
+--Events.OnGameBoot.Add(errorMagnifier.setErrorMagnifierButton)
+Events.OnMainMenuEnter.Add(errorMagnifier.setErrorMagnifierButton)
 
 ---pass checks every tick
 local function compareErrorCount() if errorMagnifier and errorMagnifier.errorCount ~= getLuaDebuggerErrors():size() then errorMagnifier.parseErrors() end end
