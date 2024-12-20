@@ -41,7 +41,9 @@ function _G.print(...)
 		print_original(args)
 	end
 
-	printThis((printText and printText or "") .. message)
+	if getDebug() then
+		printThis((printText and printText or "") .. message)
+	end
 end
 
 
