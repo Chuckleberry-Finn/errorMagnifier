@@ -118,7 +118,7 @@ errorMagnifier.maxErrorsViewable = 6
 
 --TODO: CHECK FLAGS ARE SET TO FALSE BEFORE RELEASE
 errorMagnifier.spamErrorTest = false
-errorMagnifier.showOnDebug = false
+errorMagnifier.showOnDebug = true
 
 
 function errorMagnifier.popupPanel:render()
@@ -231,8 +231,9 @@ function errorMagnifier.setErrorMagnifierButton(forceShow)
 	local screenWidth, screenHeight = getCore():getScreenWidth(), getCore():getScreenHeight()
 
 	local fontHeight = getTextManager():getFontHeight(UIFont.NewSmall)
-	local x = screenWidth - eW
-	local y = screenHeight - (fontHeight*2) - eH - 30
+
+	local x = (screenWidth - eW-4)
+	local y = MainScreen.instance and MainScreen.instance.resetLua and MainScreen.instance.resetLua.y-2 or (screenHeight-eH-4)
 
 	if getWorld():getGameMode() == "Multiplayer" then y = y-22 end
 
@@ -263,6 +264,7 @@ function errorMagnifier.setErrorMagnifierButton(forceShow)
 		errorMagnifier.popUps["errorMessage"..i] = errorMagnifier.popupPanel:new(popupX,popupY-(popupYOffset*i), popupWidth, popupHeight)
 		---@type ISPanel
 		local popup = errorMagnifier.popUps["errorMessage"..i]
+		popup.backgroundColor = {r=0, g=0, b=0, a=0.9};
 		popup:initialise()
 		popup:instantiate()
 		popup:addToUIManager()
