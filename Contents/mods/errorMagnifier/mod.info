@@ -3,6 +3,3 @@ poster=poster.png
 icon=icon.png
 id=errorMagnifier
 description= Strictly for debugging purposes, creates in-game popups to make error reporting clear and easy.
-versionMin=42.0
-author=Chuckleberry Finn
-require=\ChuckleberryFinnAlertSystem,
