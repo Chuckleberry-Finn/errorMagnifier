@@ -21,5 +21,5 @@ description=
 description=
 description=
 description=[h3]Copyright 2023 Chuckleberry Finn. This item is not authorized for posting on Steam, except under the Steam account named Chuckleberry Finn.[/h3]
-tags=Build 40;Build 41;Misc
+tags=Build 41;Build 42;Interface;Misc;QoL
 visibility=public
