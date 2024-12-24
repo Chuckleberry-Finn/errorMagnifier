@@ -33,12 +33,12 @@ function _G.print(...)
 	end
 
 	local args = {...}
-	local message = table.concat(args, " ")
+	local message = table.concat(args, "	")
 
 	if printText and printText ~= "" then
-		print_original(printText, args)
+		print_original(printText.." "..tostring(message))
 	else
-		print_original(args)
+		print_original(...)
 	end
 
 	if getDebug() then

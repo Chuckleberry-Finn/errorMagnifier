@@ -5,3 +5,7 @@
 [ 12/23/24 ]
 - Fixed issue with alerts mod.
 [ ------ ]
+
+[ 12/23/24 Hotfix #1 ]
+- Fixes issue with printing incorrectly.
+[ ------ ]
