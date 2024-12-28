@@ -12,7 +12,7 @@ end
 function _G.print(...)
 
 	local coroutine = getCurrentCoroutine()
-	local printText
+	local modTag
 	if coroutine then
 		local count = getCallframeTop(coroutine)
 		--for i= count - 1, 0, -1 do
@@ -25,7 +25,7 @@ function _G.print(...)
 					local modInfo = modInfoDir and getModInfo(modInfoDir)
 					local modID = modInfo and modInfo:getId()
 					if modID then
-						printText = "\["..modID.."\] "
+						modTag = "["..modID.."] "
 					end
 				end
 			end
@@ -33,15 +33,19 @@ function _G.print(...)
 	end
 
 	local args = {...}
-	local message = table.concat(args, "	")
+	local message = nil--table.concat(args, " ")
 
-	if printText and printText ~= "" then
-		print_original(printText.." "..tostring(message))
+	for _,arg in pairs(args) do
+		message = (message or "") .. tostring(arg) .. " "
+	end
+
+	if modTag and modTag ~= "" then
+		print_original(modTag, ...)
 	else
 		print_original(...)
 	end
 
 	if getDebug() then
-		printThis((printText and printText or "") .. message)
+		printThis(((modTag and modTag or "[ vanilla ] ") .. message))
 	end
 end
