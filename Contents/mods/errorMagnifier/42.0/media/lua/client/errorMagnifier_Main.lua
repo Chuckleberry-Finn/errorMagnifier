@@ -227,8 +227,10 @@ function errorMagnifier.onResolutionChange()
 	local x = (screenWidth - eW-4)
 	local y = MainScreen.instance and MainScreen.instance.resetLua and MainScreen.instance.resetLua.y-2 or (screenHeight-eH-4)
 
-	errorMagnifier.Button:setX(x)
-	errorMagnifier.Button:setY(y)
+	if errorMagnifier.Button then
+		errorMagnifier.Button:setX(x)
+		errorMagnifier.Button:setY(y)
+	end
 end
 
 
