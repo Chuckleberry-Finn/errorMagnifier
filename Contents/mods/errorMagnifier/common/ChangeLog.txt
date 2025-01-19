@@ -14,3 +14,7 @@
 B42:
 - Fix serious issue in print() fingerPrint override.
 [ ------ ]
+
+[ 1/18/25 ]
+- Anchored UI to handle screen size changes.
+[ ------ ]

@@ -243,6 +243,12 @@ function errorMagnifier.setErrorMagnifierButton(forceShow)
 
 	errorMagnifier.Button:setImage(errorMagTexture)
 	errorMagnifier.Button:setDisplayBackground(false)
+
+	errorMagnifier.Button:setAnchorLeft(false)
+	errorMagnifier.Button:setAnchorTop(false)
+	errorMagnifier.Button:setAnchorRight(true)
+	errorMagnifier.Button:setAnchorBottom(true)
+
 	errorMagnifier.Button:initialise()
 	errorMagnifier.Button:addToUIManager()
 	errorMagnifier.Button:setAlwaysOnTop(true)
