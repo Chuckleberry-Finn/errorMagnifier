@@ -10,6 +10,7 @@ local function compareErrorCount() if errorMagnifier and errorMagnifier.errorCou
 Events.OnTickEvenPaused.Add(compareErrorCount)
 Events.OnFETick.Add(compareErrorCount)
 
+Events.OnResolutionChange.Add(errorMagnifier.onResolutionChange)
 
 --TODO: CHECK FLAGS ARE SET TO FALSE BEFORE RELEASE (in errorMagnifier_Main)
 if getDebug() and errorMagnifier.spamErrorTest then

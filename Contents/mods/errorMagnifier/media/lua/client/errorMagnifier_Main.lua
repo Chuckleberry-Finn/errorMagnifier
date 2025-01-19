@@ -220,6 +220,19 @@ function errorMagnifier.hideErrorMag()
 end
 
 
+function errorMagnifier.onResolutionChange()
+	local screenWidth, screenHeight = getCore():getScreenWidth(), getCore():getScreenHeight()
+
+	local errorMagTexture = getTexture("media/textures/magGlassError.png")
+	local eW, eH = errorMagTexture:getWidth(), errorMagTexture:getHeight()
+	local x = (screenWidth - eW-4)
+	local y = MainScreen.instance and MainScreen.instance.resetLua and MainScreen.instance.resetLua.y-2 or (screenHeight-eH-4)
+
+	errorMagnifier.Button:setX(x)
+	errorMagnifier.Button:setY(y)
+end
+
+
 function errorMagnifier.setErrorMagnifierButton(forceShow)
 
 	---@type Texture
