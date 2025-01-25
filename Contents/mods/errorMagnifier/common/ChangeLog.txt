@@ -25,6 +25,6 @@ link2 = Workshop = https://steamcommunity.com/id/Chuckleberry_Finn/myworkshopfil
 link3 = Github = https://steamcommunity.com/linkfilter/?u=https://github.com/Chuckleberry-Finn,
 [ ------ ]
 
-[ Hotfix ]
-- Fix first startup edge case.
+[ 1/25/25 ]
+- Fix first-startup edge-case where UI is not set yet.
 [ ------ ]
