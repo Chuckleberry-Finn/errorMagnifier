@@ -14,7 +14,7 @@ function _G.print(...)
 	local coroutine = getCurrentCoroutine()
 	local modTag
 	if coroutine then
-		local count = getCallframeTop(coroutine)
+		-- local count = getCallframeTop(coroutine)
 		--for i= count - 1, 0, -1 do
 			---@type LuaCallFrame
 			local luaCallFrame = getCoroutineCallframeStack(coroutine,0)
