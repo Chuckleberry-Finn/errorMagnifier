@@ -46,6 +46,6 @@ function _G.print(...)
 	end
 
 	if getDebug() then
-		printThis(((modTag and modTag or "[ vanilla ] ") .. message))
+		printThis(((modTag and modTag or "[ vanilla ] ") .. tostring(message)))
 	end
 end
