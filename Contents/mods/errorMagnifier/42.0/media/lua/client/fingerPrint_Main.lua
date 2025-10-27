@@ -14,7 +14,7 @@ function _G.print(...)
 	local coroutine = getCurrentCoroutine()
 	local modTag
 	if coroutine then
-		local count = getCallframeTop(coroutine)
+		-- local count = getCallframeTop(coroutine)
 		--for i= count - 1, 0, -1 do
 			---@type LuaCallFrame
 			local luaCallFrame = getCoroutineCallframeStack(coroutine,0)
@@ -32,13 +32,6 @@ function _G.print(...)
 		--end
 	end
 
-	local args = {...}
-	local message = nil--table.concat(args, " ")
-
-	for _,arg in pairs(args) do
-		message = (message or "") .. tostring(arg) .. " "
-	end
-
 	if modTag and modTag ~= "" then
 		print_original(modTag, ...)
 	else
@@ -46,6 +39,13 @@ function _G.print(...)
 	end
 
 	if getDebug() then
-		printThis(((modTag and modTag or "[ vanilla ] ") .. message))
+		local args = {...}
+		local message = nil--table.concat(args, " ")
+
+		for i = 1, #args do
+			message = (message or "") .. tostring(args[i]) .. " "
+		end
+
+		printThis(((modTag and modTag or "[ vanilla ] ") .. tostring(message)))
 	end
 end
