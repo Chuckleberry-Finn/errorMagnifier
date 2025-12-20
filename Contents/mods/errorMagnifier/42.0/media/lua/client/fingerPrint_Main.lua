@@ -33,9 +33,9 @@ function _G.print(...)
 	end
 
 	if modTag and modTag ~= "" then
-		print_original(modTag, ...)
+		print_original(":", modTag, ...)
 	else
-		print_original(...)
+		print_original(":", ...)
 	end
 
 	if getDebug() then
@@ -46,6 +46,6 @@ function _G.print(...)
 			message = (message or "") .. tostring(args[i]) .. " "
 		end
 
-		printThis(((modTag and modTag or "[ vanilla ] ") .. tostring(message)))
+		printThis(":" .. ((modTag and modTag or "[ vanilla ] ") .. tostring(message)))
 	end
 end

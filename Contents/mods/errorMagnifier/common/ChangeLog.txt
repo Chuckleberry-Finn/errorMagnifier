@@ -28,3 +28,7 @@ link3 = Github = https://steamcommunity.com/linkfilter/?u=https://github.com/Chu
 [ 1/25/25 ]
 - Fix first-startup edge-case where UI is not set yet.
 [ ------ ]
+
+[ 12/19/25 ]
+- Tested on B42.13 with no apparent issues.
+[ ------ ]
