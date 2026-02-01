@@ -315,7 +315,9 @@ function errorMagnifier.MainWindow:createChildren()
     self.copyAllBtn:setAnchorTop(false)
     self.copyAllBtn:setAnchorBottom(true)
     self:addChild(self.copyAllBtn)
-    
+
+    ---TIS DISABLED DESKTOP BROWSING + ADDED A HARSH URL SCREENING
+    --[[
     self.openLogsBtn = ISButton:new(42, bottomY, 24, 24, "", self, errorMagnifier.openLogsInExplorer)
     self.openLogsBtn:initialise()
     self.openLogsBtn:instantiate()
@@ -324,8 +326,10 @@ function errorMagnifier.MainWindow:createChildren()
     self.openLogsBtn:setAnchorTop(false)
     self.openLogsBtn:setAnchorBottom(true)
     self:addChild(self.openLogsBtn)
-    
-    self.clearBtn = ISButton:new(74, bottomY, 24, 24, "", self, self.onClear)
+    --]]
+
+    ---old x 74
+    self.clearBtn = ISButton:new(42, bottomY, 24, 24, "", self, self.onClear)
     self.clearBtn:initialise()
     self.clearBtn:instantiate()
     self.clearBtn:setTooltip("Clear All Errors")
@@ -893,7 +897,7 @@ function errorMagnifier.onResolutionChange()
 end
 
 
-function errorMagnifier.openLogsInExplorer()
+function errorMagnifier:openLogsInExplorer()
     local cacheDir = Core.getMyDocumentFolder()
     if isDesktopOpenSupported() then showFolderInDesktop(cacheDir)
     else openUrl(cacheDir)
