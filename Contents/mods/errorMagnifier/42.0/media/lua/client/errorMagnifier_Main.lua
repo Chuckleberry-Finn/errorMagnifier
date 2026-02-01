@@ -423,11 +423,11 @@ function errorMagnifier.doDrawItem(self, y, item, alt)
                 local modId
                 local remainder
                 if javaStart and javaStart > 1 then
-                    modId = afterMod:sub(1, javaStart - 1)
+                    modId = afterMod:sub(1, javaStart - 1):gsub("%s+$", "")
                     remainder = afterMod:sub(javaStart)
                 else
-                    modId = afterMod:match("^([%w_%-]+)") or afterMod
-                    remainder = afterMod:sub(#modId + 1)
+                    modId = afterMod:gsub("%s+$", "")
+                    remainder = ""
                 end
 
                 local beforeMod = line:sub(1, modStart - 1)
@@ -508,15 +508,32 @@ function errorMagnifier.getModIdsFromErrors()
     local modIds = {}
     local seen = {}
     for _, errorText in ipairs(errorMagnifier.parsedErrorsKeyed) do
-        for modId in errorText:gmatch("MOD:%s*([%w_%-]+)") do
-            if not seen[modId] then
-                seen[modId] = true
-                table.insert(modIds, modId)
+        -- Process line by line to extract MOD: names
+        for line in errorText:gmatch("[^\n]+") do
+            local modStart = line:find("MOD:%s*")
+            if modStart then
+                -- Get everything after "MOD:" 
+                local afterMod = line:sub(modStart + 4):gsub("^%s+", "")  -- Skip "MOD:" and trim leading space
+                
+                -- Stop at java package names or end of line
+                local javaStart = afterMod:find("[a-z]+%.[a-z]")
+                local modId
+                if javaStart and javaStart > 1 then
+                    modId = afterMod:sub(1, javaStart - 1):gsub("%s+$", "")  -- Trim trailing space
+                else
+                    modId = afterMod:gsub("%s+$", "")  -- Just trim trailing space
+                end
+                
+                if modId and modId ~= "" and not seen[modId] then
+                    seen[modId] = true
+                    table.insert(modIds, modId)
+                end
             end
         end
     end
     return modIds
 end
+
 
 function errorMagnifier.onListMouseDown()
     return false
