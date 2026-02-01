@@ -575,7 +575,6 @@ function errorMagnifier.onListMouseUp(self, x, y)
                             errorMagnifier.refreshSingleReport(data.modId)
                             local freshReport = errorMagnifier.cachedReports[data.modId]
                             if freshReport then
-                                textToCopy = textToCopy .. "\n--- Report Data ---\n"
                                 textToCopy = textToCopy .. freshReport.content .. "\n"
                             end
                         end
@@ -701,7 +700,6 @@ function errorMagnifier.MainWindow:onCopyAll()
                 errorMagnifier.refreshSingleReport(modId)
                 local reportData = errorMagnifier.cachedReports[modId]
                 if reportData then
-                    text = text .. "--- Report Data ---\n"
                     text = text .. reportData.content .. "\n"
                 end
             end
