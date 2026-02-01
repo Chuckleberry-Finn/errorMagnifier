@@ -55,14 +55,14 @@ end
 
 
 if getDebug() then
-    -- EXAMPLE: debug dump for ErrorMagnifier itself
-    errorMagnifier.registerDebugDump("errorMagnifier", function()
+    -- EXAMPLE: debug report for ErrorMagnifier itself
+    errorMagnifier.registerDebugReport("errorMagnifier", function()
         return {
             errorCount = errorMagnifier.errorCount,
             uniqueErrors = #errorMagnifier.parsedErrorsKeyed,
             registeredMods = (function()
                 local count = 0
-                for _ in pairs(errorMagnifier.modDumps) do count = count + 1 end
+                for _ in pairs(errorMagnifier.modReports) do count = count + 1 end
                 return count
             end)(),
             hiddenMode = errorMagnifier.hiddenMode,

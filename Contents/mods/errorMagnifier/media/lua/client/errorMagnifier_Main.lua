@@ -5,8 +5,8 @@ errorMagnifier.parsedErrorsKeyed = {} --{[1]="error1",[2]="error2"}
 errorMagnifier.errorTimestamps = {}
 errorMagnifier.errorCount = 0
 
-errorMagnifier.modDumps = {}
-errorMagnifier.cachedDumps = {}
+errorMagnifier.modReports = {}
+errorMagnifier.cachedReports = {}
 
 errorMagnifier.currentTab = "errors"
 errorMagnifier.hiddenMode = false
@@ -32,49 +32,49 @@ function errorMagnifier.getRealTimeStamp()
 end
 
 
-function errorMagnifier.registerDebugDump(modId, dumpFunc, displayName)
-    if type(modId) ~= "string" or modId == "" then print("[ErrorMagnifier] registerDebugDump: Invalid modId") return false end
-    if type(dumpFunc) ~= "function" then print("[ErrorMagnifier] registerDebugDump: dumpFunc must be a function") return false end
+function errorMagnifier.registerDebugReport(modId, reportFunc, displayName)
+    if type(modId) ~= "string" or modId == "" then print("[ErrorMagnifier] registerDebugReport: Invalid modId") return false end
+    if type(reportFunc) ~= "function" then print("[ErrorMagnifier] registerDebugReport: reportFunc must be a function") return false end
     
-    errorMagnifier.modDumps[modId] = {
-        func = dumpFunc,
+    errorMagnifier.modReports[modId] = {
+        func = reportFunc,
         displayName = displayName or modId,
         registered = getTimestamp,
     }
-    print("[ErrorMagnifier] Registered debug dump for: " .. modId)
+    print("[ErrorMagnifier] Registered debug report for: " .. modId)
     return true
 end
 
 
-function errorMagnifier.unregisterDebugDump(modId)
-    if errorMagnifier.modDumps[modId] then
-        errorMagnifier.modDumps[modId] = nil
-        errorMagnifier.cachedDumps[modId] = nil
+function errorMagnifier.unregisterDebugReport(modId)
+    if errorMagnifier.modReports[modId] then
+        errorMagnifier.modReports[modId] = nil
+        errorMagnifier.cachedReports[modId] = nil
         return true
     end
     return false
 end
 
-function errorMagnifier.collectAllDumps()
-    errorMagnifier.cachedDumps = {}
+function errorMagnifier.collectAllReports()
+    errorMagnifier.cachedReports = {}
     
-    for modId, dumpData in pairs(errorMagnifier.modDumps) do
-        local success, result = pcall(dumpData.func)
+    for modId, reportData in pairs(errorMagnifier.modReports) do
+        local success, result = pcall(reportData.func)
         if success then
             if type(result) == "table" then
                 result = errorMagnifier.tableToString(result, 0)
             elseif type(result) ~= "string" then
                 result = tostring(result)
             end
-            errorMagnifier.cachedDumps[modId] = {
-                displayName = dumpData.displayName,
+            errorMagnifier.cachedReports[modId] = {
+                displayName = reportData.displayName,
                 content = result,
                 timestamp = getTimestamp
             }
         else
-            errorMagnifier.cachedDumps[modId] = {
-                displayName = dumpData.displayName,
-                content = "Error collecting dump: " .. tostring(result),
+            errorMagnifier.cachedReports[modId] = {
+                displayName = reportData.displayName,
+                content = "Error collecting report: " .. tostring(result),
                 timestamp = getTimestamp
             }
         end
@@ -82,26 +82,26 @@ function errorMagnifier.collectAllDumps()
 end
 
 
-function errorMagnifier.refreshSingleDump(modId)
-    local dumpData = errorMagnifier.modDumps[modId]
-    if not dumpData then return false end
+function errorMagnifier.refreshSingleReport(modId)
+    local reportData = errorMagnifier.modReports[modId]
+    if not reportData then return false end
     
-    local success, result = pcall(dumpData.func)
+    local success, result = pcall(reportData.func)
     if success then
         if type(result) == "table" then
             result = errorMagnifier.tableToString(result, 0)
         elseif type(result) ~= "string" then
             result = tostring(result)
         end
-        errorMagnifier.cachedDumps[modId] = {
-            displayName = dumpData.displayName,
+        errorMagnifier.cachedReports[modId] = {
+            displayName = reportData.displayName,
             content = result,
             timestamp = getTimestamp
         }
     else
-        errorMagnifier.cachedDumps[modId] = {
-            displayName = dumpData.displayName,
-            content = "Error collecting dump: " .. tostring(result),
+        errorMagnifier.cachedReports[modId] = {
+            displayName = reportData.displayName,
+            content = "Error collecting report: " .. tostring(result),
             timestamp = getTimestamp
         }
     end
@@ -144,7 +144,7 @@ function errorMagnifier.parseErrors()
         str = str:gsub("\t", "    ")
         str = str:gsub("%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-\n", "")
         str = str:gsub("%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-\nSTACK TRACE\n%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-\n", "")
-        str = str:gsub("dumping Lua stack trace%s*\n?", "")
+        str = str:gsub("reporting Lua stack trace%s*\n?", "")
         table.insert(newErrors, str)
     end
 
@@ -282,12 +282,12 @@ function errorMagnifier.MainWindow:createChildren()
     self.errorsTabBtn.borderColor = {r = 0.5, g = 0.5, b = 0.5, a = 1}
     self:addChild(self.errorsTabBtn)
     
-    self.dumpsTabBtn = ISButton:new(115, tabY, 120, btnHeight, "Mods (0)", self, self.onTabClick)
-    self.dumpsTabBtn.internal = "dumps"
-    self.dumpsTabBtn:initialise()
-    self.dumpsTabBtn:instantiate()
-    self.dumpsTabBtn.borderColor = {r = 0.5, g = 0.5, b = 0.5, a = 1}
-    self:addChild(self.dumpsTabBtn)
+    self.reportsTabBtn = ISButton:new(115, tabY, 120, btnHeight, "Mods (0)", self, self.onTabClick)
+    self.reportsTabBtn.internal = "reports"
+    self.reportsTabBtn:initialise()
+    self.reportsTabBtn:instantiate()
+    self.reportsTabBtn.borderColor = {r = 0.5, g = 0.5, b = 0.5, a = 1}
+    self:addChild(self.reportsTabBtn)
 
     local contentHeight = self.height - contentY - 46
     
@@ -456,7 +456,7 @@ function errorMagnifier.doDrawItem(self, y, item, alt)
     else
         local modId = data.modId
         local displayName = data.displayName or modId
-        local hasDump = data.hasDump
+        local hasReport = data.hasReport
         local errorCount = data.errorCount or 0
         local textY = y + (rowHeight - fontH) / 2
         local xPos = padding
@@ -472,12 +472,12 @@ function errorMagnifier.doDrawItem(self, y, item, alt)
             xPos = xPos + 4
         end
 
-        if hasDump then
-            self:drawText("Dump: Yes", xPos, textY, 0.5, 0.8, 0.5, 0.9, font)
+        if hasReport then
+            self:drawText("Report: Yes", xPos, textY, 0.5, 0.8, 0.5, 0.9, font)
         else
-            self:drawText("Dump: No", xPos, textY, 0.6, 0.6, 0.6, 0.5, font)
+            self:drawText("Report: No", xPos, textY, 0.6, 0.6, 0.6, 0.5, font)
         end
-        xPos = xPos + getTextManager():MeasureStringX(font, "Dump: Yes") + 12
+        xPos = xPos + getTextManager():MeasureStringX(font, "Report: Yes") + 12
 
         if errorCount > 0 then
             local errText = "Errors: " .. errorCount
@@ -554,12 +554,12 @@ function errorMagnifier.onListMouseUp(self, x, y)
                     elseif data.modId and data.modId ~= "help" then
                         textToCopy = "```\n[" .. data.modId .. " - Mod Report]\n"
 
-                        if data.hasDump then
-                            errorMagnifier.refreshSingleDump(data.modId)
-                            local freshDump = errorMagnifier.cachedDumps[data.modId]
-                            if freshDump then
-                                textToCopy = textToCopy .. "\n--- Dump Data ---\n"
-                                textToCopy = textToCopy .. freshDump.content .. "\n"
+                        if data.hasReport then
+                            errorMagnifier.refreshSingleReport(data.modId)
+                            local freshReport = errorMagnifier.cachedReports[data.modId]
+                            if freshReport then
+                                textToCopy = textToCopy .. "\n--- Report Data ---\n"
+                                textToCopy = textToCopy .. freshReport.content .. "\n"
                             end
                         end
 
@@ -569,8 +569,8 @@ function errorMagnifier.onListMouseUp(self, x, y)
                             for _, err in ipairs(modErrors) do
                                 textToCopy = textToCopy .. "\n[x" .. err.count .. "]\n" .. err.text .. "\n"
                             end
-                        elseif not data.hasDump then
-                            textToCopy = textToCopy .. "\nNo dump data or errors found.\n"
+                        elseif not data.hasReport then
+                            textToCopy = textToCopy .. "\nNo report data or errors found.\n"
                         end
                         textToCopy = textToCopy .. "```"
                     end
@@ -603,8 +603,8 @@ function errorMagnifier.MainWindow:onTabClick(button)
         errorMagnifier.refreshErrorDisplay()
     else
         self.scrollPanel.itemheight = 32
-        errorMagnifier.collectAllDumps()
-        errorMagnifier.refreshDumpDisplay()
+        errorMagnifier.collectAllReports()
+        errorMagnifier.refreshReportDisplay()
     end
 end
 
@@ -615,12 +615,12 @@ function errorMagnifier.MainWindow:updateTabAppearance()
     
     if errorMagnifier.currentTab == "errors" then
         self.errorsTabBtn.backgroundColor = activeColor
-        self.dumpsTabBtn.backgroundColor = inactiveColor
+        self.reportsTabBtn.backgroundColor = inactiveColor
         if self.clearBtn then self.clearBtn:setVisible(true) end
         if self.openLogsBtn then self.openLogsBtn:setVisible(true) end
     else
         self.errorsTabBtn.backgroundColor = inactiveColor
-        self.dumpsTabBtn.backgroundColor = activeColor
+        self.reportsTabBtn.backgroundColor = activeColor
         if self.clearBtn then self.clearBtn:setVisible(false) end
         if self.openLogsBtn then self.openLogsBtn:setVisible(false) end
     end
@@ -629,7 +629,7 @@ function errorMagnifier.MainWindow:updateTabAppearance()
 
     local modCount = 0
     local seenMods = {}
-    for modId in pairs(errorMagnifier.modDumps) do
+    for modId in pairs(errorMagnifier.modReports) do
         seenMods[modId] = true
         modCount = modCount + 1
     end
@@ -638,7 +638,7 @@ function errorMagnifier.MainWindow:updateTabAppearance()
             modCount = modCount + 1
         end
     end
-    self.dumpsTabBtn:setTitle("Mods (" .. modCount .. ")")
+    self.reportsTabBtn:setTitle("Mods (" .. modCount .. ")")
 end
 
 
@@ -646,8 +646,8 @@ function errorMagnifier.MainWindow:onRefresh()
     if errorMagnifier.currentTab == "errors" then
         errorMagnifier.refreshErrorDisplay()
     else
-        errorMagnifier.collectAllDumps()
-        errorMagnifier.refreshDumpDisplay()
+        errorMagnifier.collectAllReports()
+        errorMagnifier.refreshReportDisplay()
     end
     self:updateTabAppearance()
 end
@@ -666,26 +666,26 @@ function errorMagnifier.MainWindow:onCopyAll()
         local allMods = {}
         local seenMods = {}
         
-        for modId, dumpData in pairs(errorMagnifier.cachedDumps) do
+        for modId, reportData in pairs(errorMagnifier.cachedReports) do
             seenMods[modId] = true
-            allMods[modId] = {hasDump = true, displayName = dumpData.displayName}
+            allMods[modId] = {hasReport = true, displayName = reportData.displayName}
         end
         
         for _, modId in ipairs(errorMagnifier.getModIdsFromErrors()) do
             if not seenMods[modId] then
-                allMods[modId] = {hasDump = false, displayName = modId}
+                allMods[modId] = {hasReport = false, displayName = modId}
             end
         end
         
         for modId, info in pairs(allMods) do
             text = text .. "=== " .. info.displayName .. " [" .. modId .. "] ===\n"
             
-            if info.hasDump then
-                errorMagnifier.refreshSingleDump(modId)
-                local dumpData = errorMagnifier.cachedDumps[modId]
-                if dumpData then
-                    text = text .. "--- Dump Data ---\n"
-                    text = text .. dumpData.content .. "\n"
+            if info.hasReport then
+                errorMagnifier.refreshSingleReport(modId)
+                local reportData = errorMagnifier.cachedReports[modId]
+                if reportData then
+                    text = text .. "--- Report Data ---\n"
+                    text = text .. reportData.content .. "\n"
                 end
             end
             
@@ -715,8 +715,8 @@ function errorMagnifier.MainWindow:onClear()
         errorMagnifier.errorCount = getLuaDebuggerErrors():size()
         errorMagnifier.refreshErrorDisplay()
     else
-        errorMagnifier.cachedDumps = {}
-        errorMagnifier.refreshDumpDisplay()
+        errorMagnifier.cachedReports = {}
+        errorMagnifier.refreshReportDisplay()
     end
     self:updateTabAppearance()
 end
@@ -762,7 +762,7 @@ function errorMagnifier.refreshErrorDisplay()
 end
 
 
-function errorMagnifier.refreshDumpDisplay()
+function errorMagnifier.refreshReportDisplay()
     if not errorMagnifier.MainWindow.instance or not errorMagnifier.MainWindow.instance.scrollPanel then return end
     
     local scrollPanel = errorMagnifier.MainWindow.instance.scrollPanel
@@ -770,11 +770,11 @@ function errorMagnifier.refreshDumpDisplay()
     
     local allMods = {}
     
-    for modId, dumpData in pairs(errorMagnifier.cachedDumps) do
+    for modId, reportData in pairs(errorMagnifier.cachedReports) do
         local errorCount = #errorMagnifier.getErrorsForMod(modId)
         allMods[modId] = {
-            hasDump = true,
-            displayName = dumpData.displayName,
+            hasReport = true,
+            displayName = reportData.displayName,
             errorCount = errorCount
         }
     end
@@ -784,7 +784,7 @@ function errorMagnifier.refreshDumpDisplay()
         if not allMods[modId] then
             local errorCount = #errorMagnifier.getErrorsForMod(modId)
             allMods[modId] = {
-                hasDump = false,
+                hasReport = false,
                 displayName = modId,
                 errorCount = errorCount
             }
@@ -797,7 +797,7 @@ function errorMagnifier.refreshDumpDisplay()
         scrollPanel:addItem(info.displayName, {
             isError = false,
             modId = modId,
-            hasDump = info.hasDump,
+            hasReport = info.hasReport,
             displayName = info.displayName,
             errorCount = info.errorCount
         })
@@ -807,8 +807,8 @@ function errorMagnifier.refreshDumpDisplay()
         scrollPanel:addItem("No mods", {
             isError = false,
             modId = "help",
-            hasDump = false,
-            displayName = "No mods with errors or dumps",
+            hasReport = false,
+            displayName = "No mods with errors or reports",
             errorCount = 0
         })
     end
@@ -845,8 +845,8 @@ function errorMagnifier.showMainWindow()
     if errorMagnifier.currentTab == "errors" then
         errorMagnifier.refreshErrorDisplay()
     else
-        errorMagnifier.collectAllDumps()
-        errorMagnifier.refreshDumpDisplay()
+        errorMagnifier.collectAllReports()
+        errorMagnifier.refreshReportDisplay()
     end
     
     errorMagnifier.MainWindow.instance:updateTabAppearance()
