@@ -32,3 +32,14 @@ link3 = Github = https://steamcommunity.com/linkfilter/?u=https://github.com/Chu
 [ 12/19/25 ]
 - Tested on B42.13 with no apparent issues.
 [ ------ ]
+
+[ 2/1/26 ]
+B41/B42+:
+NEW: UI Overhaul! ErrorMag now uses a window!
+  The error mag button is always present (on the main-menu or in the pause-menu).
+  Only appears during gameplay when an error occurs, right-clicking it in-game hides it.
+NEW: 'Mods' tab houses all the mods receiving errors, the copy button here copies just the errors from that mod.
+NEW: 'Reports' API for other modders to include a useful information dump to go along with their errors.
+
+Only B42+: Open console log location no longer supported by TIS. :(
+[ ------ ]
