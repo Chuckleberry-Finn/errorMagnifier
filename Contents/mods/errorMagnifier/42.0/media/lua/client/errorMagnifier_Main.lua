@@ -144,7 +144,7 @@ function errorMagnifier.parseErrors()
         str = str:gsub("\t", "    ")
         str = str:gsub("%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-\n", "")
         str = str:gsub("%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-\nSTACK TRACE\n%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-\n", "")
-        str = str:gsub("reporting Lua stack trace%s*\n?", "")
+        str = str:gsub("dumping Lua stack trace%s*\n?", "")
         table.insert(newErrors, str)
     end
 
