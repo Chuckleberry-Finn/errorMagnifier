@@ -671,7 +671,7 @@ end
 
 function errorMagnifier.MainWindow:onCopyAll()
     local text = ""
-    if errorMagnifier.parsedErrorsKeyed <= 0 then return end
+    if #errorMagnifier.parsedErrorsKeyed <= 0 then return end
     
     if errorMagnifier.currentTab == "errors" then
         for i, errorText in ipairs(errorMagnifier.parsedErrorsKeyed) do

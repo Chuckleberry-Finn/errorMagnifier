@@ -42,4 +42,8 @@ NEW: 'Mods' tab houses all the mods receiving errors, the copy button here copie
 NEW: 'Reports' API for other modders to include a useful information dump to go along with their errors.
 
 Only B42+: Open console log location no longer supported by TIS. :(
+
+HOTFIX:
+  Small error when copying all.
+  Cleaner error output.
 [ ------ ]
