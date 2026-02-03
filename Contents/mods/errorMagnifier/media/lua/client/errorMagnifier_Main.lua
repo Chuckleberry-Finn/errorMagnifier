@@ -8,11 +8,17 @@ errorMagnifier.errorCount = 0
 errorMagnifier.modReports = {}
 errorMagnifier.cachedReports = {}
 
+errorMagnifier.modIdCache = {}
+errorMagnifier.modDisplayNames = {}
+errorMagnifier.modCacheBuilt = false
+
 errorMagnifier.currentTab = "errors"
 errorMagnifier.hiddenMode = false
 
 errorMagnifier.lastCopiedKey = nil
 errorMagnifier.lastCopiedTime = 0
+errorMagnifier.lastActionMessage = nil
+errorMagnifier.lastActionTime = 0
 
 --TODO: DISABLE THIS FOR RELEASE
 errorMagnifier.spamErrorTest = false
@@ -21,6 +27,76 @@ errorMagnifier.colors = {
     modId = {1, 1, 0.3},
     normal = {0.9, 0.9, 0.9},
 }
+
+
+function errorMagnifier.getZomboidSettingsHeader()
+    local version = getCore():getVersion() .. (getSteamModeActive() and " (Steam)" or "")
+    local mode = isClient() and "MULTIPLAYER" or "SINGLE PLAYER"
+    local checksum = isClient() and getServerOptions():getBoolean("DoLuaChecksum") or nil
+    
+    local header = "=== Zomboid Settings ===\n"
+    header = header .. "Version: " .. version .. "\n"
+    header = header .. "Mode: " .. mode .. "\n"
+    if checksum ~= nil then
+        header = header .. "Lua Checksum: " .. tostring(checksum) .. "\n"
+    end
+    header = header .. "\n"
+    
+    return header
+end
+
+
+function errorMagnifier.buildModIdCache()
+    errorMagnifier.modIdCache = {}
+    errorMagnifier.modDisplayNames = {}
+    
+    local activeMods = getActivatedMods()
+    if activeMods then
+        for i = 0, activeMods:size() - 1 do
+            local modID = activeMods:get(i)
+            if modID then
+                local modInfo = getModInfoByID and getModInfoByID(modID) or nil
+                if modInfo then
+                    local modName = modInfo:getName()
+                    
+                    errorMagnifier.modIdCache[modID] = modID
+                    errorMagnifier.modDisplayNames[modID] = modName or modID
+                    
+                    if modName and modName ~= "" and modName ~= modID then
+                        errorMagnifier.modIdCache[modName] = modID
+                    end
+                else
+                    errorMagnifier.modIdCache[modID] = modID
+                    errorMagnifier.modDisplayNames[modID] = modID
+                end
+            end
+        end
+    end
+    errorMagnifier.modCacheBuilt = true
+end
+
+
+function errorMagnifier.normalizeModId(identifier)
+    if not identifier or identifier == "" then return nil end
+    
+    local cached = errorMagnifier.modIdCache[identifier]
+    if cached then return cached end
+    
+    if not errorMagnifier.modCacheBuilt then
+        errorMagnifier.buildModIdCache()
+        cached = errorMagnifier.modIdCache[identifier]
+        if cached then return cached end
+    end
+    
+    errorMagnifier.modIdCache[identifier] = identifier
+    errorMagnifier.modDisplayNames[identifier] = identifier
+    return identifier
+end
+
+
+function errorMagnifier.getModDisplayName(modId)
+    return errorMagnifier.modDisplayNames[modId] or modId
+end
 
 
 function errorMagnifier.getRealTimeStamp()
@@ -493,10 +569,31 @@ end
 
 function errorMagnifier.getErrorsForMod(modId)
     local errors = {}
-    local searchPattern = "MOD: " .. modId
-    local searchPattern2 = "MOD:" .. modId
+    local normalizedId = errorMagnifier.normalizeModId(modId)
+    
     for _, errorText in ipairs(errorMagnifier.parsedErrorsKeyed) do
-        if errorText:find(searchPattern, 1, true) or errorText:find(searchPattern2, 1, true) then
+        local found = false
+        for line in errorText:gmatch("[^\n]+") do
+            local modStart = line:find("MOD:%s*")
+            if modStart then
+                local afterMod = line:sub(modStart + 4):gsub("^%s+", "")
+                local javaStart = afterMod:find("[a-z]+%.[a-z]")
+                local extractedId
+                if javaStart and javaStart > 1 then
+                    extractedId = afterMod:sub(1, javaStart - 1):gsub("%s+$", "")
+                else
+                    extractedId = afterMod:gsub("%s+$", "")
+                end
+                
+                local normalizedExtracted = errorMagnifier.normalizeModId(extractedId)
+                if normalizedExtracted == normalizedId then
+                    found = true
+                    break
+                end
+            end
+        end
+        
+        if found then
             local count = errorMagnifier.parsedErrors[errorText] or 1
             table.insert(errors, {text = errorText, count = count})
         end
@@ -508,26 +605,26 @@ end
 function errorMagnifier.getModIdsFromErrors()
     local modIds = {}
     local seen = {}
+    
     for _, errorText in ipairs(errorMagnifier.parsedErrorsKeyed) do
-        -- Process line by line to extract MOD: names
         for line in errorText:gmatch("[^\n]+") do
             local modStart = line:find("MOD:%s*")
             if modStart then
-                -- Get everything after "MOD:"
-                local afterMod = line:sub(modStart + 4):gsub("^%s+", "")  -- Skip "MOD:" and trim leading space
-
-                -- Stop at java package names or end of line
+                local afterMod = line:sub(modStart + 4):gsub("^%s+", "")
+                
                 local javaStart = afterMod:find("[a-z]+%.[a-z]")
-                local modId
+                local rawId
                 if javaStart and javaStart > 1 then
-                    modId = afterMod:sub(1, javaStart - 1):gsub("%s+$", "")  -- Trim trailing space
+                    rawId = afterMod:sub(1, javaStart - 1):gsub("%s+$", "")
                 else
-                    modId = afterMod:gsub("%s+$", "")  -- Just trim trailing space
+                    rawId = afterMod:gsub("%s+$", "")
                 end
-
-                if modId and modId ~= "" and not seen[modId] then
-                    seen[modId] = true
-                    table.insert(modIds, modId)
+                
+                local normalizedId = errorMagnifier.normalizeModId(rawId)
+                
+                if normalizedId and normalizedId ~= "" and not seen[normalizedId] then
+                    seen[normalizedId] = true
+                    table.insert(modIds, normalizedId)
                 end
             end
         end
@@ -564,12 +661,18 @@ function errorMagnifier.onListMouseUp(self, x, y)
             if x >= btnX and x <= btnX + btnSize and mouseYScrollAdjusted >= btnY and mouseYScrollAdjusted <= btnY + btnSize then
                 local data = item.item
                 if data then
-                    local textToCopy = ""
+                    local textToCopy = nil
+                    
                     if data.isError then
                         local count = data.count or 1
-                        textToCopy = "```\n[x" .. count .. "]\n" .. (data.text or "") .. "\n```"
+                        textToCopy = "```\n" .. errorMagnifier.getZomboidSettingsHeader() .. "[x" .. count .. "]\n" .. (data.text or "") .. "\n```"
                     elseif data.modId and data.modId ~= "help" then
-                        textToCopy = "```\n[" .. data.modId .. " - Mod Report]\n"
+                        local displayName = errorMagnifier.getModDisplayName(data.modId)
+                        textToCopy = "```\n" .. errorMagnifier.getZomboidSettingsHeader() .. "[" .. displayName
+                        if displayName ~= data.modId then
+                            textToCopy = textToCopy .. " (" .. data.modId .. ")"
+                        end
+                        textToCopy = textToCopy .. " - Mod Report]\n"
 
                         if data.hasReport then
                             errorMagnifier.refreshSingleReport(data.modId)
@@ -589,9 +692,11 @@ function errorMagnifier.onListMouseUp(self, x, y)
                             textToCopy = textToCopy .. "\nNo report data or errors found.\n"
                         end
                         textToCopy = textToCopy .. "```"
+                    else
+                        textToCopy = nil
                     end
                     
-                    if textToCopy ~= "" then
+                    if textToCopy and textToCopy ~= "" then
                         Clipboard.setClipboard(textToCopy)
                         errorMagnifier.lastCopiedKey = data.isError and data.index or data.modId
                         errorMagnifier.lastCopiedTime = getTimestampMs()
@@ -646,11 +751,16 @@ function errorMagnifier.MainWindow:updateTabAppearance()
     local modCount = 0
     local seenMods = {}
     for modId in pairs(errorMagnifier.modReports) do
-        seenMods[modId] = true
-        modCount = modCount + 1
+        local normalizedId = errorMagnifier.normalizeModId(modId)
+        if not seenMods[normalizedId] then
+            seenMods[normalizedId] = true
+            modCount = modCount + 1
+        end
     end
     for _, modId in ipairs(errorMagnifier.getModIdsFromErrors()) do
-        if not seenMods[modId] then
+        local normalizedId = errorMagnifier.normalizeModId(modId)
+        if not seenMods[normalizedId] then
+            seenMods[normalizedId] = true
             modCount = modCount + 1
         end
     end
@@ -670,8 +780,9 @@ end
 
 
 function errorMagnifier.MainWindow:onCopyAll()
-    local text = ""
     if #errorMagnifier.parsedErrorsKeyed <= 0 then return end
+    
+    local text = "```\n" .. errorMagnifier.getZomboidSettingsHeader()
     
     if errorMagnifier.currentTab == "errors" then
         for i, errorText in ipairs(errorMagnifier.parsedErrorsKeyed) do
@@ -684,22 +795,41 @@ function errorMagnifier.MainWindow:onCopyAll()
         local seenMods = {}
         
         for modId, reportData in pairs(errorMagnifier.cachedReports) do
-            seenMods[modId] = true
-            allMods[modId] = {hasReport = true, displayName = reportData.displayName}
+            local normalizedId = errorMagnifier.normalizeModId(modId)
+            if not seenMods[normalizedId] then
+                seenMods[normalizedId] = true
+                allMods[normalizedId] = {
+                    hasReport = true, 
+                    displayName = reportData.displayName,
+                    originalId = modId
+                }
+            end
         end
         
         for _, modId in ipairs(errorMagnifier.getModIdsFromErrors()) do
-            if not seenMods[modId] then
-                allMods[modId] = {hasReport = false, displayName = modId}
+            local normalizedId = errorMagnifier.normalizeModId(modId)
+            if not seenMods[normalizedId] then
+                seenMods[normalizedId] = true
+                local displayName = errorMagnifier.getModDisplayName(normalizedId)
+                allMods[normalizedId] = {
+                    hasReport = false, 
+                    displayName = displayName,
+                    originalId = modId
+                }
             end
         end
         
         for modId, info in pairs(allMods) do
-            text = text .. "=== " .. info.displayName .. " [" .. modId .. "] ===\n"
+            local displayName = info.displayName
+            text = text .. "=== " .. displayName
+            if displayName ~= modId then
+                text = text .. " [" .. modId .. "]"
+            end
+            text = text .. " ===\n"
             
             if info.hasReport then
-                errorMagnifier.refreshSingleReport(modId)
-                local reportData = errorMagnifier.cachedReports[modId]
+                errorMagnifier.refreshSingleReport(info.originalId)
+                local reportData = errorMagnifier.cachedReports[info.originalId]
                 if reportData then
                     text = text .. reportData.content .. "\n"
                 end
@@ -716,20 +846,27 @@ function errorMagnifier.MainWindow:onCopyAll()
         end
     end
     
-    if text ~= "" then
-        Clipboard.setClipboard(text)
-        print("[ErrorMagnifier] Copied to clipboard!")
-    end
+    text = text .. "```"
+    Clipboard.setClipboard(text)
+    errorMagnifier.lastActionMessage = "Copied!"
+    errorMagnifier.lastActionTime = getTimestampMs()
+    getSoundManager():playUISound("UISelectListItem")
+    print("[ErrorMagnifier] Copied to clipboard!")
 end
 
 
 function errorMagnifier.MainWindow:onClear()
+    if #errorMagnifier.parsedErrorsKeyed <= 0 then return end
+    
     if errorMagnifier.currentTab == "errors" then
         errorMagnifier.parsedErrors = {}
         errorMagnifier.parsedErrorsKeyed = {}
         errorMagnifier.errorTimestamps = {}
         errorMagnifier.errorCount = getLuaDebuggerErrors():size()
         errorMagnifier.refreshErrorDisplay()
+        errorMagnifier.lastActionMessage = "Cleared!"
+        errorMagnifier.lastActionTime = getTimestampMs()
+        getSoundManager():playUISound("UISelectListItem")
     else
         errorMagnifier.cachedReports = {}
         errorMagnifier.refreshReportDisplay()
@@ -746,11 +883,31 @@ end
 
 function errorMagnifier.MainWindow:prerender()
     ISCollapsableWindow.prerender(self)
+    
+    local hasErrors = #errorMagnifier.parsedErrorsKeyed > 0
+    if self.copyAllBtn then
+        self.copyAllBtn:setEnable(hasErrors)
+        self.copyAllBtn.textureColor = hasErrors and {r=1, g=1, b=1, a=1} or {r=0.4, g=0.4, b=0.4, a=0.5}
+    end
+    if self.clearBtn and self.clearBtn:isVisible() then
+        self.clearBtn:setEnable(hasErrors)
+        self.clearBtn.textureColor = hasErrors and {r=1, g=1, b=1, a=1} or {r=0.4, g=0.4, b=0.4, a=0.5}
+    end
 end
 
 
 function errorMagnifier.MainWindow:render()
     ISCollapsableWindow.render(self)
+    
+    local currentTime = getTimestampMs()
+    if errorMagnifier.lastActionMessage and (currentTime - errorMagnifier.lastActionTime) < 1500 then
+        local font = UIFont.Small
+        local fontH = getTextManager():getFontHeight(font)
+        local bottomY = self.height - 42
+        local textX = 106
+        local textY = bottomY + (24 - fontH) / 2
+        self:drawText(errorMagnifier.lastActionMessage, textX, textY, 0.3, 0.8, 0.5, 1, font)
+    end
 end
 
 
@@ -785,23 +942,31 @@ function errorMagnifier.refreshReportDisplay()
     scrollPanel:clear()
     
     local allMods = {}
+    local seenMods = {}
     
     for modId, reportData in pairs(errorMagnifier.cachedReports) do
-        local errorCount = #errorMagnifier.getErrorsForMod(modId)
-        allMods[modId] = {
-            hasReport = true,
-            displayName = reportData.displayName,
-            errorCount = errorCount
-        }
+        local normalizedId = errorMagnifier.normalizeModId(modId)
+        if not seenMods[normalizedId] then
+            seenMods[normalizedId] = true
+            local errorCount = #errorMagnifier.getErrorsForMod(normalizedId)
+            allMods[normalizedId] = {
+                hasReport = true,
+                displayName = reportData.displayName,
+                errorCount = errorCount
+            }
+        end
     end
     
     local errorModIds = errorMagnifier.getModIdsFromErrors()
     for _, modId in ipairs(errorModIds) do
-        if not allMods[modId] then
-            local errorCount = #errorMagnifier.getErrorsForMod(modId)
-            allMods[modId] = {
+        local normalizedId = errorMagnifier.normalizeModId(modId)
+        if not seenMods[normalizedId] then
+            seenMods[normalizedId] = true
+            local errorCount = #errorMagnifier.getErrorsForMod(normalizedId)
+            local displayName = errorMagnifier.getModDisplayName(normalizedId)
+            allMods[normalizedId] = {
                 hasReport = false,
-                displayName = modId,
+                displayName = displayName,
                 errorCount = errorCount
             }
         end
@@ -847,6 +1012,8 @@ function errorMagnifier.showMainWindow()
     local winHeight = math.min(600, screenHeight * 0.7)
     local x = (screenWidth - winWidth) / 2
     local y = (screenHeight - winHeight) / 2
+    
+    errorMagnifier.buildModIdCache()
     
     if not errorMagnifier.MainWindow.instance then
         errorMagnifier.MainWindow.instance = errorMagnifier.MainWindow:new(x, y, winWidth, winHeight)
@@ -954,7 +1121,8 @@ function errorMagnifier:getErrorOntoClipboard(errorIndex)
     local errorText = errorMagnifier.parsedErrorsKeyed[errorIndex]
     if errorText then
         local count = errorMagnifier.parsedErrors[errorText] or 1
-        Clipboard.setClipboard("```\n[x" .. count .. "]\n" .. errorText .. "\n```")
+        local text = "```\n" .. errorMagnifier.getZomboidSettingsHeader() .. "[x" .. count .. "]\n" .. errorText .. "\n```"
+        Clipboard.setClipboard(text)
         print("[ErrorMagnifier] Copied error #" .. errorIndex .. " to clipboard!")
     end
 end
