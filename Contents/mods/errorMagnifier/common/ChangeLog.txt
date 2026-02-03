@@ -47,3 +47,11 @@ HOTFIX:
   Small error when copying all.
   Cleaner error output.
 [ ------ ]
+
+[ 2/2/26 ]
+- Added handy useful PZ-info dump as standard header.
+  Includes game version, game-mode, and luachecksum flag.
+- Fixed some issues with modID identification.
+- Added status message for copy/clear all.
+  Also made it so they're disabled when error count is 0.
+[ ------ ]
