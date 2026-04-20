@@ -55,3 +55,9 @@ HOTFIX:
 - Added status message for copy/clear all.
   Also made it so they're disabled when error count is 0.
 [ ------ ]
+
+[ 4/20/26 ]
+- Fixed the highlight feature for MOD IDs in the UI.
+ - Restructured it internally to make updates easier next time.
+- Changed minimum version supported to 42.15
+[ ------ ]

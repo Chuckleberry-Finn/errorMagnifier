@@ -27,6 +27,11 @@ errorMagnifier.colors = {
     normal = {0.9, 0.9, 0.9},
 }
 
+errorMagnifier.modTag = {
+    prefix = "((MOD:",
+    suffix = "))",
+}
+
 
 function errorMagnifier.getZomboidSettingsHeader()
     local version = getCore():getVersion() .. (getSteamModeActive() and " (Steam)" or "")
@@ -98,6 +103,26 @@ function errorMagnifier.getModDisplayName(modId)
 end
 
 
+function errorMagnifier.extractModTag(line)
+    local mt = errorMagnifier.modTag
+    local modStart = line:find(mt.prefix, 1, true)
+    if not modStart then return nil end
+
+    local prefixLen = #mt.prefix
+    local modClose  = line:find(mt.suffix, modStart + prefixLen, true)
+    local modId, remainder
+    if modClose then
+        modId     = line:sub(modStart + prefixLen, modClose - 1)
+        remainder = line:sub(modClose + #mt.suffix)
+    else
+        modId     = line:sub(modStart + prefixLen):gsub("%s+$", "")
+        remainder = ""
+    end
+
+    return line:sub(1, modStart - 1), modId, remainder
+end
+
+
 function errorMagnifier.getRealTimeStamp()
     local calendar = Calendar.getInstance()
     local year = calendar:get(Calendar.YEAR)
@@ -129,6 +154,7 @@ function errorMagnifier.unregisterDebugReport(modId)
     end
     return false
 end
+
 
 function errorMagnifier.collectAllReports()
     errorMagnifier.cachedReports = {}
@@ -277,7 +303,7 @@ function errorMagnifier.parseErrors()
         local hasStackMarkers = str:find("function:") or 
                                 str:find("at se%.krka") or 
                                 str:find("Callframe at:") or
-                                str:find("MOD:") or
+                                str:find(errorMagnifier.modTag.prefix, 1, true) or
                                 str:find("java%.lang%.")
         if hasStackMarkers then return false end
 
@@ -490,33 +516,16 @@ function errorMagnifier.doDrawItem(self, y, item, alt)
         for _, line in ipairs(lines) do
             if textY + fontH > y + rowHeight - padding then break end
 
-            local modStart = line:find("MOD:%s*")
-            if modStart then
-                local modColonEnd = line:find(":", modStart) + 1
-                local afterMod = line:sub(modColonEnd)
-                local leadingSpace = afterMod:match("^(%s*)") or ""
-                afterMod = afterMod:gsub("^%s+", "")
-
-                local javaStart = afterMod:find("[a-z]+%.[a-z]")
-                
-                local modId
-                local remainder
-                if javaStart and javaStart > 1 then
-                    modId = afterMod:sub(1, javaStart - 1):gsub("%s+$", "")
-                    remainder = afterMod:sub(javaStart)
-                else
-                    modId = afterMod:gsub("%s+$", "")
-                    remainder = ""
-                end
-
-                local beforeMod = line:sub(1, modStart - 1)
+            local beforeMod, modId, remainder = errorMagnifier.extractModTag(line)
+            if modId then
+                local mt = errorMagnifier.modTag
                 local xPos = padding
                 if beforeMod ~= "" then
                     self:drawText(beforeMod, xPos, textY, c.normal[1], c.normal[2], c.normal[3], 0.95, font)
                     xPos = xPos + getTextManager():MeasureStringX(font, beforeMod)
                 end
 
-                local modText = "MOD:" .. leadingSpace .. modId
+                local modText = mt.prefix .. modId .. mt.suffix
                 self:drawText(modText, xPos, textY, c.modId[1], c.modId[2], c.modId[3], 1, font)
                 xPos = xPos + getTextManager():MeasureStringX(font, modText)
 
@@ -574,20 +583,11 @@ function errorMagnifier.getErrorsForMod(modId)
     local normalizedId = errorMagnifier.normalizeModId(modId)
     
     for _, errorText in ipairs(errorMagnifier.parsedErrorsKeyed) do
-        -- Check each line for MOD: tags and normalize them
+        -- Check each line for mod tags and normalize them
         local found = false
         for line in errorText:gmatch("[^\n]+") do
-            local modStart = line:find("MOD:%s*")
-            if modStart then
-                local afterMod = line:sub(modStart + 4):gsub("^%s+", "")
-                local javaStart = afterMod:find("[a-z]+%.[a-z]")
-                local extractedId
-                if javaStart and javaStart > 1 then
-                    extractedId = afterMod:sub(1, javaStart - 1):gsub("%s+$", "")
-                else
-                    extractedId = afterMod:gsub("%s+$", "")
-                end
-                
+            local _, extractedId = errorMagnifier.extractModTag(line)
+            if extractedId then
                 local normalizedExtracted = errorMagnifier.normalizeModId(extractedId)
                 if normalizedExtracted == normalizedId then
                     found = true
@@ -610,22 +610,10 @@ function errorMagnifier.getModIdsFromErrors()
     local seen = {}
     
     for _, errorText in ipairs(errorMagnifier.parsedErrorsKeyed) do
-        -- Process line by line to extract MOD: names
+        -- Process line by line to extract mod tag names
         for line in errorText:gmatch("[^\n]+") do
-            local modStart = line:find("MOD:%s*")
-            if modStart then
-                -- Get everything after "MOD:" 
-                local afterMod = line:sub(modStart + 4):gsub("^%s+", "")  -- Skip "MOD:" and trim leading space
-                
-                -- Stop at java package names or end of line
-                local javaStart = afterMod:find("[a-z]+%.[a-z]")
-                local rawId
-                if javaStart and javaStart > 1 then
-                    rawId = afterMod:sub(1, javaStart - 1):gsub("%s+$", "")  -- Trim trailing space
-                else
-                    rawId = afterMod:gsub("%s+$", "")  -- Just trim trailing space
-                end
-                
+            local _, rawId = errorMagnifier.extractModTag(line)
+            if rawId then
                 -- Normalize the mod ID to prevent duplicates
                 local normalizedId = errorMagnifier.normalizeModId(rawId)
                 
@@ -640,9 +628,8 @@ function errorMagnifier.getModIdsFromErrors()
 end
 
 
-function errorMagnifier.onListMouseDown()
-    return false
-end
+function errorMagnifier.onListMouseDown() return false end
+
 
 function errorMagnifier.onListMouseUp(self, x, y)
     local scrollBarWidth = 0
