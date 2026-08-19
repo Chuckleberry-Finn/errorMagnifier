@@ -1,5 +1,5 @@
 local print_original = print
-
+--[[
 local writer = getFileWriter("TEMP_PRINT_LOG.txt", true, false)
 writer:close()
 
@@ -8,7 +8,7 @@ local function printThis(msg)
 	w:write(msg.."\n")
 	w:close()
 end
-
+--]]
 function _G.print(...)
 
 	local coroutine = getCurrentCoroutine()
@@ -37,7 +37,7 @@ function _G.print(...)
 	else
 		print_original(":", ...)
 	end
-
+	--[[
 	if getDebug() then
 		local args = {...}
 		local message = nil--table.concat(args, " ")
@@ -48,4 +48,5 @@ function _G.print(...)
 
 		printThis(":" .. ((modTag and modTag or "[ vanilla ] ") .. tostring(message)))
 	end
+	--]]
 end

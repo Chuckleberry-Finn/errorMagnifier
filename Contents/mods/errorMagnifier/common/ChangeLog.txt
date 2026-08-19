@@ -61,3 +61,7 @@ HOTFIX:
  - Restructured it internally to make updates easier next time.
 - Changed minimum version supported to 42.15
 [ ------ ]
+
+[ 8/19/26 ]
+- Disabled old debug feature now throwing errors in latest patch.
+[ ------ ]
