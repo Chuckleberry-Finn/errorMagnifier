@@ -65,3 +65,7 @@ HOTFIX:
 [ 8/19/26 ]
 - Disabled old debug feature now throwing errors in latest patch.
 [ ------ ]
+
+[ 9/22/26 ]
+- Overrode print with Debuglog.log.
+[ ------ ]
